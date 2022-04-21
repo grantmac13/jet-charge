@@ -240,21 +240,19 @@ int main(int argc, const char** argv){
         
         t->SetBranchAddress("weight", &weight);
     
+        // systematic applied in sim.cxx, so this is just taking entries from trees and filling responses with them
         for(int i = 0; i < (int) t->GetEntries(); i++){
             // take each event
             t->GetEntry(i);
             double clos_rand = gRandom->Uniform(0.0, 1.0); //randomly split events into sampleA, sampleB
-
-
-
             for(int j = 0; j < (int) det_jetpt->size(); j++){
                 // loop over matched jets and fill response
                 double jc_p = 0.0; double jc_d = 0.0;
                 double p_pt = part_jetpt->at(j);
                 double d_pt =  det_jetpt->at(j);
                 
-		if(iSyst == 0){
-	                match_plus_miss->Fill(p_pt, weight);
+                if(iSyst == 0){
+                    match_plus_miss->Fill(p_pt, weight);
                 }
                 for(int ii = 0; ii < (int) max( part_conspt->at(j).size(), det_conspt->at(j).size() ); ii++){
                     if(ii < (int) part_conspt->at(j).size()){
