@@ -119,35 +119,45 @@ int main(int argc, const char **argv){
 	//defining local containers to be linked to tree branches
 	int p_EventID;
 	double p_n_jets, p_wt;
-	vector<vector<double> > p_conspT;
+
+	// either a vector of doubles or a vector of vectors of doubles...
+	//vector<double> part_Pt; vector<double> part_Eta; vector<double> part_Phi; //vector<double> p_consM; vector<double> p_E;
+	vector<vector<double> > part_Pt; vector<vector<double> > part_Eta; vector<vector<double> > part_Phi; //vector<double> p_consM; vector<double> p_E;
+
 	vector<double> p_jetMult;
 	vector<double> p_Pt; vector<double> p_Eta; vector<double> p_Phi; vector<double> p_M; vector<double> p_E;
+	vector<vector<double> > p_consPt; vector<vector<double> > p_consEta; vector<vector<double> > p_consPhi; //vector<double> p_consM; vector<double> p_E;
 	vector<double> p_mcd;
+	vector<int> p_n_cons;
 
 	int g_EventID;
 	double g_n_jets, g_wt;
-	vector<vector<double> > g_conspT;
 	vector<double> g_jetMult;
 	vector<double> g_Pt; vector<double> g_Eta; vector<double> g_Phi; vector<double> g_M; vector<double> g_E;
+	vector<vector<double> > g_consPt; vector<vector<double> > g_consEta; vector<vector<double> > g_consPhi; //vector<double> g_M; vector<double> g_E;
 	vector<double> g_mcd;
 	
 
 
 	//tree to hold jet and constituent quantites
 	TTree *eventTree = new TTree("event","event");
+	eventTree->Branch("p_EventID", &p_EventID);
 	eventTree->Branch("p_n_jets", &p_n_jets);
-	eventTree->Branch("p_conspT",&p_conspT);
-	eventTree->Branch("p_jetMult",&p_jetMult);
-	eventTree->Branch("p_Pt", &p_Pt); eventTree->Branch("p_Eta",&p_Eta); eventTree->Branch("p_Phi",&p_Phi); eventTree->Branch("p_M",&p_M); eventTree->Branch("p_E",&p_E);
-	eventTree->Branch("p_mcd",&p_mcd);
-	eventTree->Branch("p_weight", &p_wt); eventTree->Branch("p_EventID", &p_EventID);
+	eventTree->Branch("part_Pt", &part_Pt); eventTree->Branch("part_Eta",&part_Eta); eventTree->Branch("part_Phi",&part_Phi);
+//	eventTree->Branch("p_jetMult",&p_jetMult);
+	eventTree->Branch("p_Pt", &p_Pt); eventTree->Branch("p_Eta",&p_Eta); eventTree->Branch("p_Phi",&p_Phi);
+	eventTree->Branch("p_n_cons", &p_n_cons);
+	eventTree->Branch("p_consPt", &p_consPt); eventTree->Branch("p_consEta",&p_consEta); eventTree->Branch("p_consPhi",&p_consPhi);
+//	eventTree->Branch("p_mcd",&p_mcd);
+	eventTree->Branch("p_weight", &p_wt);
 
+	eventTree->Branch("g_EventID", &g_EventID);
 	eventTree->Branch("g_n_jets", &g_n_jets);
-	eventTree->Branch("g_conspT",&g_conspT);
-	eventTree->Branch("g_jetMult",&g_jetMult);
-	eventTree->Branch("g_Pt", &g_Pt); eventTree->Branch("g_Eta",&g_Eta); eventTree->Branch("g_Phi",&g_Phi); eventTree->Branch("g_M",&g_M); eventTree->Branch("g_E",&g_E);
-	eventTree->Branch("g_mcd",&g_mcd);
-	eventTree->Branch("g_weight", &g_wt); eventTree->Branch("g_EventID", &g_EventID);
+//	eventTree->Branch("g_jetMult",&g_jetMult);
+	eventTree->Branch("g_Pt", &g_Pt); eventTree->Branch("g_Eta",&g_Eta); eventTree->Branch("g_Phi",&g_Phi);
+	eventTree->Branch("g_consPt", &g_consPt); eventTree->Branch("g_consEta",&g_consEta); eventTree->Branch("g_consPhi",&g_consPhi);
+//	eventTree->Branch("g_mcd",&g_mcd);
+	eventTree->Branch("g_weight", &g_wt);
 
 	// for jet charge need the following:
 	// for both particle and detector level
@@ -162,12 +172,36 @@ int main(int argc, const char **argv){
 	vector<double>  det_jetpt; vector<vector<double> >  det_conspt; vector<vector<double> >  det_chcons;
 	vector<double> miss_jetpt; vector<vector<double> > miss_conspt; vector<vector<double> > miss_chcons;
 	vector<double> fake_jetpt; vector<vector<double> > fake_conspt; vector<vector<double> > fake_chcons;
+	
+	vector<double> part_jeteta; vector<double> part_jetphi; vector<double> part_jetmass;
+	vector<double> det_jeteta; vector<double> det_jetphi; vector<double> det_jetmass;
+
+	vector<double> miss_jeteta; vector<double> miss_jetphi; vector<double> miss_jetmass;
+	vector<double> fake_jeteta; vector<double> fake_jetphi; vector<double> fake_jetmass;
+
+	vector<double> part_jetNEF; vector<double> det_jetNEF; vector<double> miss_jetNEF; vector<double> fake_jetNEF;
 
 
 	TTree *jetChargeTree = new TTree("jetChargeTree", "jetChargeTree");
+	jetChargeTree->Branch("p_EventID", &p_EventID);
+	jetChargeTree->Branch("p_n_jets", &p_n_jets);
+	jetChargeTree->Branch("g_EventID", &g_EventID);
+	jetChargeTree->Branch("g_n_jets", &g_n_jets);
+
+	jetChargeTree->Branch("p_n_cons", &p_n_cons);
 
 	jetChargeTree->Branch("part_jetpt", &part_jetpt);
 	jetChargeTree->Branch("det_jetpt", &det_jetpt);
+
+	jetChargeTree->Branch("part_jeteta", &part_jeteta);
+	jetChargeTree->Branch("part_jetphi", &part_jetphi);
+	jetChargeTree->Branch("det_jeteta", &det_jeteta);
+	jetChargeTree->Branch("det_jetphi", &det_jetphi);
+
+	jetChargeTree->Branch("part_jetmass", &part_jetmass);
+	jetChargeTree->Branch("det_jetmass", &det_jetmass);
+
+
 	jetChargeTree->Branch("part_conspt", &part_conspt);
 	jetChargeTree->Branch("det_conspt", &det_conspt);
 	jetChargeTree->Branch("part_chcons", &part_chcons);
@@ -178,9 +212,27 @@ int main(int argc, const char **argv){
 	jetChargeTree->Branch("miss_conspt", &miss_conspt);
 	jetChargeTree->Branch("miss_chcons", &miss_chcons);
 
+	jetChargeTree->Branch("miss_jeteta", &miss_jeteta);
+	jetChargeTree->Branch("miss_jetphi", &miss_jetphi);
+
+	jetChargeTree->Branch("miss_jetmass", &miss_jetmass);
+
+
 	jetChargeTree->Branch("fake_jetpt", &fake_jetpt);
 	jetChargeTree->Branch("fake_conspt", &fake_conspt);
 	jetChargeTree->Branch("fake_chcons", &fake_chcons);
+
+	jetChargeTree->Branch("fake_jeteta", &fake_jeteta);
+	jetChargeTree->Branch("fake_jetphi", &fake_jetphi);
+
+	jetChargeTree->Branch("fake_jetmass", &fake_jetmass);
+
+
+	jetChargeTree->Branch("part_jetNEF", &part_jetNEF);
+	jetChargeTree->Branch("det_jetNEF", &det_jetNEF);
+	jetChargeTree->Branch("miss_jetNEF", &miss_jetNEF);
+	jetChargeTree->Branch("fake_jetNEF", &fake_jetNEF);
+
 
     
         TTree *towerscale = new TTree("towerscale", "towerscale");
@@ -286,6 +338,10 @@ int main(int argc, const char **argv){
 	// figure out binning of this histogram... probably according to the 10-15, 15-20, 20-30, 30-40 bins i would have to assume
 
 
+	TH1D* jetpt_match = new TH1D("jetpt_match", "", 7, 5.0, 40.0);
+	TH1D* jetpt_miss = new TH1D("jetpt_miss", "", 7, 5.0, 40.0);
+	TH1D* jetpt_fake = new TH1D("jetpt_fake", "", 7, 5.0, 40.0);
+
 /*
 	// BALANCE FUNCTION
 	// fill tree with constituents' pt, charge
@@ -312,22 +368,22 @@ int main(int argc, const char **argv){
 	//SELECTORS
 	// Constituent selectors
 	// ---------------------
-	Selector select_track_rap = fastjet::SelectorAbsRapMax(max_track_rap);
+	Selector select_track_rap = fastjet::SelectorAbsEtaMax(max_track_rap);
 	Selector select_lopt      = fastjet::SelectorPtMin( partMinPt );
 	Selector select_loptmax   = fastjet::SelectorPtMax( partMaxPt );
 	Selector spart = select_track_rap * select_lopt * select_loptmax;
 	
 	// Jet candidate selectors
 	// -----------------------
-	Selector select_jet_rap     = fastjet::SelectorAbsRapMax(max_rap);
+	Selector select_jet_rap     = fastjet::SelectorAbsEtaMax(max_rap); // Cut on eta is correct, cut on rapidity is wrong and legacy--> change variable names to eta here and in src/params.hh
 	Selector select_det_jet_pt_min  = fastjet::SelectorPtMin( det_jet_ptmin );
 	Selector select_gen_jet_pt_min = fastjet::SelectorPtMin( jet_ptmin );
 	Selector select_jet_pt_max  = fastjet::SelectorPtMax( jet_ptmax );
-//	Selector select_det_jet_m_min = fastjet::SelectorMassMin( 0.0/*mass_min*/ );
-//	Selector select_gen_jet_m_min = fastjet::SelectorMassMin( 0.0 );
+	Selector select_det_jet_m_min = fastjet::SelectorMassMin( 1.0/*0.0*/ /*mass_min*/ ); // for consistency with Isaac: seems that he was still applying this detector level cut, after applying this my particle level matched (to detector level) jets are consistent but when not requiring jets to be matched there remains inconsistency, specifically in particle level jet pt spectrum
+	Selector select_gen_jet_m_min = fastjet::SelectorMassMin( 0.0 );
 	
 	Selector sjet_gen = select_jet_rap && select_gen_jet_pt_min && select_jet_pt_max /*&& select_gen_jet_m_min*/;
-	Selector sjet_det = select_jet_rap && select_det_jet_pt_min && select_jet_pt_max /*&& select_det_jet_m_min*/;
+	Selector sjet_det = select_jet_rap && select_det_jet_pt_min && select_jet_pt_max && select_det_jet_m_min;
 	
 	vector<PseudoJet> p_Particles, g_Particles, p_Jets, g_Jets, g_Jets_Initial;
 	int p_n_accepted = 0; int g_n_accepted = 0; int p_NJets = 0; int g_NJets = 0;
@@ -339,36 +395,24 @@ int main(int argc, const char **argv){
         // loop over systematics
         // start with nominal and tower scaling
         int nSources = 6;
+
         int njet_events[nSources] = {0, 0, 0, 0, 0, 0};
         for(int iSyst = 0; iSyst < nSources; iSyst++){
-            if(iSyst == 0){
-                cout << "RUNNING WITH NOMINAL SETTINGS\n";
-            }
-            else if(iSyst == 1){
-                cout << "RUNNING WITH TOWER SCALE SETTINGS\n";
-            }
-            else if(iSyst == 2){
-                cout << "RUNNING WITH TRACKING EFFICIENCY SETTINGS\n";
-            }
-            else if(iSyst == 3){
-                cout << "RUNNING WITH HADRONIC CORRECTION 50%\n";
-            }
-            else if(iSyst == 4){
-                cout << "RUNNING WITH DETECTOR SMEARING\n";
-            }
-            else if(iSyst == 5){
-                cout << "RUNNING WITH GENERATOR SMEARING\n";
-            }
-        
+            if(iSyst == 0){cout << "RUNNING WITH NOMINAL SETTINGS\n";}
+            if(iSyst == 1){cout << "RUNNING WITH TOWER SCALE SETTINGS\n";}
+            if(iSyst == 2){cout << "RUNNING WITH TRACKING EFFICIENCY SETTINGS\n";}
+            if(iSyst == 3){cout << "RUNNING WITH HADRONIC CORRECTION 50%\n";}
+            if(iSyst == 4){cout << "RUNNING WITH DETECTOR SMEARING\n";}
+            if(iSyst == 5){cout << "RUNNING WITH GENERATOR SMEARING\n";}
+	    
+	    
             hc = 0.9999;
             if(iSyst == 3){double hc = 0.5;}
         
     
             //initialize both readers
 	    InitReader(P6Reader, P6Chain, nEvents, "All", truth_absMaxVz, truth_vZDiff, truth_evPtMax, truth_evEtMax, truth_evEtMin, truth_DCA, truth_NFitPts, truth_FitOverMaxPts, sim_maxEtTow, hc, false, sim_badTowers, sim_bad_run_list);
-	    InitReader(GEANTReader, GEANTChain, nEvents, det_triggerString, det_absMaxVz, det_vZDiff, det_evPtMax, det_evEtMax, det_evEtMin, det_DCA, det_NFitPts, det_FitOverMaxPts, sim_maxEtTow, hc, false, sim_badTowers, sim_bad_run_list);
-//	    InitReader(GEANTReader, GEANTChain, nEvents, "All", det_absMaxVz, det_vZDiff, det_evPtMax, det_evEtMax, det_evEtMin, det_DCA, det_NFitPts, det_FitOverMaxPts, sim_maxEtTow, hc, false, sim_badTowers, sim_bad_run_list);
-
+	    InitReader(GEANTReader, GEANTChain, nEvents, det_triggerString, det_absMaxVz, det_vZDiff, det_evPtMax, det_evEtMax, det_evEtMin, det_DCA, det_NFitPts, det_FitOverMaxPts, sim_maxEtTow, hc, false, det_badTowers, dat_bad_run_list);
 
             // loop over events to find low statistics jet pt vs constituent pt event numbers
             for(int event = 0; event < P6Chain->GetEntries(); event++){
@@ -382,14 +426,15 @@ int main(int argc, const char **argv){
 		//clearing vectors; initializing variables to -9999
 		mc_weight = -9999;
 		p_n_jets = -9999; p_wt = -9999;
-		p_conspT.clear();
+		part_Pt.clear(); part_Eta.clear(); part_Phi.clear();
 		p_jetMult.clear();
 		p_Pt.clear(); p_Eta.clear(); p_Phi.clear(); p_M.clear(); p_E.clear();
+		p_consPt.clear(); p_consEta.clear(); p_consPhi.clear();
 
 		g_n_jets = -9999; g_wt = -9999;
-		g_conspT.clear();
 		g_jetMult.clear();
 		g_Pt.clear(); g_Eta.clear(); g_Phi.clear(); g_M.clear(); g_E.clear();
+		g_consPt.clear(); g_consEta.clear(); g_consPhi.clear();
 
 
 		// clear vectors that go into trees every event
@@ -397,29 +442,35 @@ int main(int argc, const char **argv){
 		det_jetpt.clear(); det_conspt.clear(); det_chcons.clear();
 		miss_jetpt.clear(); miss_conspt.clear(); miss_chcons.clear();
 		fake_jetpt.clear(); fake_conspt.clear(); fake_chcons.clear();
-
-
-/*		// vectors that need to be cleared... had not been clearing misses and fakes here...
+		// vectors that need to be cleared... had not been clearing misses and fakes here...
 		// fixed 4/17/22
-		vector<double> part_jetpt; vector<vector<double> > part_conspt; vector<vector<double> > part_chcons;
-		vector<double>  det_jetpt; vector<vector<double> >  det_conspt; vector<vector<double> >  det_chcons;
-		vector<double> miss_jetpt; vector<vector<double> > miss_conspt; vector<vector<double> > miss_chcons;
-		vector<double> fake_jetpt; vector<vector<double> > fake_conspt; vector<vector<double> > fake_chcons;
-*/
+
+		part_jeteta.clear(); part_jetphi.clear(); part_jetmass.clear();
+		det_jeteta.clear(); det_jetphi.clear(); det_jetmass.clear();
+
+		miss_jeteta.clear(); miss_jetphi.clear(); miss_jetmass.clear();
+		fake_jeteta.clear(); fake_jetphi.clear(); fake_jetmass.clear();
+
+		part_jetNEF.clear();
+		det_jetNEF.clear();
+		miss_jetNEF.clear();
+		fake_jetNEF.clear();
+
+		p_n_cons.clear();
 
 
 //		part_jetpt_bf.clear(); part_bf_conspt.clear(); part_bf_chcons.clear();
 //		det_jetpt_bf.clear(); det_bf_conspt.clear(); det_bf_chcons.clear();
 
 
-
 		p_Particles.clear(); g_Particles.clear();
 		p_Jets.clear(); g_Jets.clear(), g_Jets_Initial.clear();
 
 		if ( match && GEANTReader->ReadEvent(p_EventID) != 1 ) {
-			/*cout << "no corresponding geant event...skipping event " << p_eventID <<endl;*/
+			/*cout << "no corresponding geant event...skipping event " << p_EventID << endl;*/
 			continue;//goes to the next event
 		}
+		if ( match && (p_EventID != g_EventID) ) { cerr << "ERROR: READING DIFFERENT EVENTS. EXITING." << endl; exit(1);}
 
 
 		//filling the data structures that were defined before the event loop:
@@ -434,6 +485,8 @@ int main(int argc, const char **argv){
 		pythiaFilename =  P6Reader->GetInputChain()->GetCurrentFile()->GetName();
 		geantFilename =  GEANTReader->GetInputChain()->GetCurrentFile()->GetName();
 
+		if (match && (pythiaFilename != geantFilename)) {std::cerr << "FILES DON'T MATCH! EXITING." << std::endl; exit(1);}
+		
 		p_wt = LookupRun12Xsec( pythiaFilename );
 		g_wt = LookupRun12Xsec( geantFilename );
 		
@@ -474,9 +527,22 @@ int main(int argc, const char **argv){
                         }
                     }
                 }
-        
+
 		vector<PseudoJet> p_cut_Particles = spart(p_Particles);
 		vector<PseudoJet> g_cut_Particles = spart(g_Particles);
+
+		vector<double> particle_cut_pt; vector<double> particle_cut_eta; vector<double> particle_cut_phi;
+		for(int ik = 0; ik < p_cut_Particles.size(); ik++){
+
+			particle_cut_pt.push_back(p_cut_Particles[ik].pt());
+			particle_cut_eta.push_back(p_cut_Particles[ik].eta());
+			particle_cut_phi.push_back(p_cut_Particles[ik].phi());
+		}
+
+		part_Pt.push_back(particle_cut_pt);
+		part_Eta.push_back(particle_cut_eta);
+		part_Phi.push_back(particle_cut_phi);
+
 
 /////////////////////////// FIND JETS
 		ClusterSequence p_Cluster(p_cut_Particles, jet_def);
@@ -488,12 +554,49 @@ int main(int argc, const char **argv){
 //		vector<PseudoJet> g_Jets;
 		ApplyNEFSelection(g_Jets_Initial, g_Jets);
 
-		if (DiscardEvent(pythiaFilename, p_Jets, g_Jets)) { counter_debug ++; continue; }
+		p_n_jets = p_Jets.size();
+		g_n_jets = g_Jets.size();
+
+		if (DiscardEvent(pythiaFilename, p_Jets, g_Jets)) { counter_debug ++; cout << "event ID = " << p_EventID << "\n"; continue; }
 
 /////////////////////////// MATCH JETS
 		if(match){
-			for(int kj = 0; kj < p_Jets.size(); kj++){
-				jetpt_match_plus_miss->Fill(p_Jets[kj].pt(), mc_weight);
+			if(iSyst == 0){
+				// as of 4/27/22 I only have one match_plus_miss histogram, only fill for nominal settings for now
+				for(int kj = 0; kj < p_Jets.size(); kj++){
+					jetpt_match_plus_miss->Fill(p_Jets[kj].pt(), mc_weight);
+
+					vector<double> cons_pt; vector<double> cons_eta; vector<double> cons_phi;
+
+					for(int ki = 0; ki < p_Jets[kj].constituents().size(); ki++){
+						cons_pt.push_back(p_Jets[kj].constituents()[ki].pt());
+						cons_eta.push_back(p_Jets[kj].constituents()[ki].eta());
+						cons_phi.push_back(p_Jets[kj].constituents()[ki].phi());
+					}
+					p_Pt.push_back(p_Jets[kj].pt());
+					p_Eta.push_back(p_Jets[kj].eta());
+					p_Phi.push_back(p_Jets[kj].phi());
+
+					p_consPt.push_back(cons_pt);
+					p_consEta.push_back(cons_eta);
+					p_consPhi.push_back(cons_phi);
+				}
+				for(int kj = 0; kj < g_Jets.size(); kj++){
+					vector<double> cons_pt; vector<double> cons_eta; vector<double> cons_phi;
+
+					for(int ki = 0; ki < g_Jets[kj].constituents().size(); ki++){
+						cons_pt.push_back(g_Jets[kj].constituents()[ki].pt());
+						cons_eta.push_back(g_Jets[kj].constituents()[ki].eta());
+						cons_phi.push_back(g_Jets[kj].constituents()[ki].phi());
+					}
+					g_Pt.push_back(g_Jets[kj].pt());
+					g_Eta.push_back(g_Jets[kj].eta());
+					g_Phi.push_back(g_Jets[kj].phi());
+
+					g_consPt.push_back(cons_pt);
+					g_consEta.push_back(cons_eta);
+					g_consPhi.push_back(cons_phi);
+				}
 			}
 
 			std::vector<fastjet::PseudoJet> g_matches; std::vector<fastjet::PseudoJet> p_matches;
@@ -524,7 +627,7 @@ int main(int argc, const char **argv){
 				MatchJets(p_Jets, g_Jets, p_matches_for_fakes, g_matches_for_fakes);
 				
 				if(g_matches_for_fakes.size() != p_matches_for_fakes.size()){std::cerr << "Somehow we have different-sized match vectors. Exiting!" <<std::endl; exit(1);}
-
+				
 				if(p_matches_for_fakes.size() < g_Jets.size()){
 					fake_indices = FakesandMisses(g_matches_for_fakes, g_Jets, fakes);
 				}
@@ -538,9 +641,11 @@ int main(int argc, const char **argv){
 			
 	                if(p_matches.size() != 0){njet_events[iSyst]++;}
 	    		for(int i = 0; i < p_matches.size(); i++){
+				double NEF_p = 0; double NEF_g = 0;
 				double part_pt = p_matches[i].pt();
 				double det_pt = g_matches[i].pt();
 
+// /*
 				if(iSyst == 4){ // detector level pT smearing
 					double res_for_this_jet = pt_res_ge->GetBinContent( pt_res_ge->GetXaxis()->FindBin( det_pt ) );
 					prior_adjust = fabs( gRandom->Gaus( 0, fabs( res_for_this_jet * det_pt ) ) );
@@ -551,16 +656,12 @@ int main(int argc, const char **argv){
 					prior_adjust = fabs( gRandom->Gaus( 0, fabs( res_for_this_jet * part_pt ) ) );
 					part_pt -= prior_adjust;
 				}
-				// add jet pt to vector that will go into tree
-				part_jetpt.push_back(part_pt);
-				det_jetpt.push_back(det_pt);
-
-
-//				part_jetpt_bf.push_back(p_matches[i].pt());
-//				det_jetpt_bf.push_back(g_matches[i].pt());
+// */
 
 				// clear vector of constituent quantities for each jet
 				part_jc_ch.clear(); part_jc_pt.clear(); det_jc_ch.clear(); det_jc_pt.clear();
+
+				p_n_cons.push_back(p_matches[i].constituents().size());
 
 				for(int j = 0; j < max( g_matches[i].constituents().size(), p_matches[i].constituents().size() ); j++){
 					if(j < p_matches[i].constituents().size()){
@@ -569,6 +670,10 @@ int main(int argc, const char **argv){
 
 						part_jc_ch.push_back(ch_cons);
 						part_jc_pt.push_back(pt_cons);
+
+						if(ch_cons == 0){
+							NEF_p += pt_cons/(double) part_pt;
+						}
 					}
 					if(j < g_matches[i].constituents().size()){
 						double ch_cons = g_matches[i].constituents()[j].user_index();
@@ -576,13 +681,39 @@ int main(int argc, const char **argv){
 
 						det_jc_ch.push_back(ch_cons);
 						det_jc_pt.push_back(pt_cons);
+
+						if(ch_cons == 0){
+							NEF_g += pt_cons/(double) det_pt;
+						}
 					}
 				}
 				// add vector of constituent pt/charge to vector that goes into tree
+
+				// add jet pt to vector that will go into tree
+				part_jetpt.push_back(part_pt);
+				det_jetpt.push_back(det_pt);
+				
+				part_jeteta.push_back(p_matches[i].eta());
+				part_jetphi.push_back(p_matches[i].phi());
+				det_jeteta.push_back(g_matches[i].eta());
+				det_jetphi.push_back(g_matches[i].phi());
+
+				if(iSyst == 0){
+					part_jetmass.push_back(p_matches[i].m());
+					det_jetmass.push_back(g_matches[i].m());
+
+					part_jetNEF.push_back(NEF_p);
+					det_jetNEF.push_back(NEF_g);
+				}
+
 				part_conspt.push_back(part_jc_pt);
 				det_conspt.push_back(det_jc_pt);
 				part_chcons.push_back(part_jc_ch);
 				det_chcons.push_back(det_jc_ch);
+
+
+//				part_jetpt_bf.push_back(part_pt);
+//				det_jetpt_bf.push_back(det_pt);
 
 //				part_bf_conspt.push_back(part_jc_pt);
 //				det_bf_conspt.push_back(det_jc_pt);
@@ -595,41 +726,55 @@ int main(int argc, const char **argv){
 			vector<double> fake_jc_ch; vector<double> fake_jc_pt;
 
 			for(int i = 0; i < misses.size(); i++){
-
+				double NEF_m = 0;
 				miss_jc_ch.clear(); miss_jc_pt.clear();
-				
-				double m_pt = misses[i].pt();
 
+				double m_pt = misses[i].pt();
+// /*
 				if(iSyst == 5){
 					double res_for_this_jet = pt_res_py->GetBinContent( pt_res_py->GetXaxis()->FindBin( m_pt ) );
 					prior_adjust = fabs( gRandom->Gaus( 0, fabs( res_for_this_jet * m_pt ) ) );
 					m_pt -= prior_adjust;
 				}
-				
+// */
+
 				for(int j = 0; j < misses[i].constituents().size(); j++){
 					double pt_cons = misses[i].constituents()[j].pt();
 					double ch_cons = misses[i].constituents()[j].user_index();
 
 					miss_jc_ch.push_back(ch_cons);
 					miss_jc_pt.push_back(pt_cons);
+
+					if(ch_cons == 0){
+						NEF_m += pt_cons/(double) m_pt;
+					}
 				}
 
 				miss_jetpt.push_back(m_pt);
 				miss_conspt.push_back(miss_jc_pt);
 				miss_chcons.push_back(miss_jc_ch);
 
+				miss_jeteta.push_back(misses[i].eta());
+				miss_jetphi.push_back(misses[i].phi());
+				miss_jetmass.push_back(misses[i].m());
+
+				miss_jetNEF.push_back(NEF_m);
+
 			} // loop over missed jets
 			for(int i = 0; i < fakes.size(); i++){
+				double NEF_f = 0;
 				
 				fake_jc_ch.clear(); fake_jc_pt.clear();
 
 				double f_pt = fakes[i].pt();
 				
+// /*
 				if(iSyst == 4){
 					double res_for_this_jet = pt_res_ge->GetBinContent( pt_res_ge->GetXaxis()->FindBin( f_pt ) );
 					prior_adjust = fabs( gRandom->Gaus( 0, fabs( res_for_this_jet * f_pt ) ) );
 					f_pt -= prior_adjust;
 				}
+// */
 
 				for(int j = 0; j < fakes[i].constituents().size(); j++){
 					double pt_cons = fakes[i].constituents()[j].pt();
@@ -638,29 +783,51 @@ int main(int argc, const char **argv){
 					fake_jc_ch.push_back(ch_cons);
 					fake_jc_pt.push_back(pt_cons);
 
+					if(ch_cons == 0){
+						NEF_f += pt_cons/(double) f_pt;
+					}
 				}
 
 				fake_jetpt.push_back(f_pt);
 				fake_conspt.push_back(fake_jc_pt);
 				fake_chcons.push_back(fake_jc_ch);
 
+				fake_jeteta.push_back(fakes[i].eta());
+				fake_jetphi.push_back(fakes[i].phi());
+				fake_jetmass.push_back(fakes[i].m());
+
+				miss_jetNEF.push_back(NEF_f);
+
 			} // loop over fake jets
-            		if(iSyst == 0){
+			if(iSyst == 0){
+				for(int i_match = 0; i_match < part_jetpt.size(); i_match++){
+					jetpt_match->Fill(part_jetpt[i_match], mc_weight);
+				}
+				for(int i_miss = 0; i_miss < miss_jetpt.size(); i_miss++){
+					jetpt_miss->Fill(miss_jetpt[i_miss], mc_weight);
+				}
+				for(int i_fake = 0; i_fake < fake_jetpt.size(); i_fake++){
+					jetpt_fake->Fill(fake_jetpt[i_fake], mc_weight);
+				}
+			}
+
+            		if(iSyst == 0 && p_Jets.size() != 0){
+				eventTree->Fill();
                 		jetChargeTree->Fill();
             		}
-	                else if(iSyst == 1){
+	                else if(iSyst == 1 && p_Jets.size() != 0){
                 		towerscale->Fill();
             		}
-	                else if(iSyst == 2){
+	                else if(iSyst == 2 && p_Jets.size() != 0){
                 		trackingeff->Fill();
 	                }
-            		else if(iSyst == 3){
+            		else if(iSyst == 3 && p_Jets.size() != 0){
                 		hadroncorr50->Fill();
             		}
-            		else if(iSyst == 4){
+            		else if(iSyst == 4 && p_Jets.size() != 0){
                 		detsmear->Fill();
             		}
-            		else if(iSyst == 5){
+            		else if(iSyst == 5 && p_Jets.size() != 0){
                 		gensmear->Fill();
             		}
 
@@ -672,71 +839,129 @@ int main(int argc, const char **argv){
 
 
 		} // if i require jets be matched
-		else{			
+		else{
 			vector<double> part_jc_ch; vector<double> part_jc_pt; vector<double> det_jc_ch; vector<double> det_jc_pt;
-			for(int i = 0; i < p_Jets.size(); i++){
-				double part_pt = p_Jets[i].pt();
-				part_jetpt.push_back(part_pt);
+			for(int i = 0; i < max( p_Jets.size(), g_Jets.size() ); i++){
+				if(i < p_Jets.size() ){
+					double NEF_p = 0;
+					double part_pt = p_Jets[i].pt();
 				
-				part_jc_ch.clear(); part_jc_pt.clear();
+					part_jc_ch.clear(); part_jc_pt.clear();
 
-				for(int j = 0; j < p_Jets[i].constituents().size(); j++){
-					if(p_Jets[i].constituents()[j].user_index() == -9999){continue;}
-					double ch_cons = p_Jets[i].constituents()[j].user_index();
-					double pt_cons = p_Jets[i].constituents()[j].pt();
+					p_n_cons.push_back(p_Jets[i].constituents().size());
 
-					part_jc_ch.push_back(ch_cons);
-					part_jc_pt.push_back(pt_cons);
+					for(int j = 0; j < p_Jets[i].constituents().size(); j++){
+						if(p_Jets[i].constituents()[j].user_index() == -9999){continue;}
+						double ch_cons = p_Jets[i].constituents()[j].user_index();
+						double pt_cons = p_Jets[i].constituents()[j].pt();
 
-				}
-				part_conspt.push_back(part_jc_pt);
-				part_chcons.push_back(part_jc_ch);
-			} // i loop over particle level jets
-			for(int i = 0; i < g_Jets.size(); i++){
-				double det_pt = g_Jets[i].pt();
-				det_jetpt.push_back(det_pt);
-				
-				det_jc_ch.clear(); det_jc_pt.clear();
-				
-				for(int j = 0; j < g_Jets[i].constituents().size(); j++){
+						part_jc_ch.push_back(ch_cons);
+						part_jc_pt.push_back(pt_cons);
 
-					double ch_cons = g_Jets[i].constituents()[j].user_index();
-					double pt_cons = g_Jets[i].constituents()[j].pt();
+						if(ch_cons == 0){
+							NEF_p += pt_cons/(double) part_pt;
+						}
+					}
 
-					det_jc_ch.push_back(ch_cons);
-					det_jc_pt.push_back(pt_cons);
+					part_jetpt.push_back(part_pt);
+					part_conspt.push_back(part_jc_pt);
+					part_chcons.push_back(part_jc_ch);
 
-				}
-				det_conspt.push_back(det_jc_pt);
-				det_chcons.push_back(det_jc_ch);
-			} // i loop over detector level jets
-			jetChargeTree->Fill();
+					part_jeteta.push_back(p_Jets[i].eta());
+					part_jetphi.push_back(p_Jets[i].phi());
+					part_jetmass.push_back(p_Jets[i].m());
+					part_jetNEF.push_back(NEF_p);
+				} // ith particle jet
+
+				if(i < g_Jets.size() ) {
+					double NEF_g = 0;
+					double det_pt = g_Jets[i].pt();
+					
+					det_jc_ch.clear(); det_jc_pt.clear();
+					
+					for(int j = 0; j < g_Jets[i].constituents().size(); j++){
+
+						double ch_cons = g_Jets[i].constituents()[j].user_index();
+						double pt_cons = g_Jets[i].constituents()[j].pt();
+						
+						det_jc_ch.push_back(ch_cons);
+						det_jc_pt.push_back(pt_cons);
+						
+						if(ch_cons == 0){
+							NEF_g += pt_cons/(double) det_pt;
+						}
+					}
+
+					det_jetpt.push_back(det_pt);
+					det_conspt.push_back(det_jc_pt);
+					det_chcons.push_back(det_jc_ch);
+
+					det_jeteta.push_back(g_Jets[i].eta());
+					det_jetphi.push_back(g_Jets[i].phi());
+					det_jetmass.push_back(g_Jets[i].m());
+					det_jetNEF.push_back(NEF_g);
+				} // ith detector jet
+			} // i loop over jets
+            		if(iSyst == 0 && p_Jets.size() != 0){
+				eventTree->Fill();
+                		jetChargeTree->Fill();
+            		}
+	                else if(iSyst == 1 && p_Jets.size() != 0){
+                		towerscale->Fill();
+            		}
+	                else if(iSyst == 2 && p_Jets.size() != 0){
+                		trackingeff->Fill();
+	                }
+            		else if(iSyst == 3 && p_Jets.size() != 0){
+                		hadroncorr50->Fill();
+            		}
+            		else if(iSyst == 4 && p_Jets.size() != 0){
+                		detsmear->Fill();
+            		}
+            		else if(iSyst == 5 && p_Jets.size() != 0){
+                		gensmear->Fill();
+            		}
 
 		} // if no matching is required
 
-            } // event loop
-//	    delete hEventJetptConstituentpt;
+	    } // event loop
         } // systematic loop
-    
+
+/*
         cout << "\nnumber of matched jets for nominal settings: " << njet_events[0] << "\n\n";
         cout << "\nnumber of matched jets for tower scale variation: " << njet_events[1] << "\n\n";
         cout << "\nnumber of matched jets for tracking efficiency variation: " << njet_events[2] << "\n\n";
         cout << "\nnumber of matched jets for hadronic correction 50%: " << njet_events[3] << "\n\n";
         cout << "\nnumber of matched jets for detector smearing: " << njet_events[4] << "\n\n";
         cout << "\nnumber of matched jets for generator smearing: " << njet_events[5] << "\n\n";
-    
+*/
+
         TFile *fout = new TFile( ( outputDir + outFileName ).c_str() ,"RECREATE");
         fout->cd();
 	
     
 	if(match){
+	    eventTree->Write();
             jetChargeTree->Write();
             towerscale->Write();
 	    trackingeff->Write();
             hadroncorr50->Write();
             detsmear->Write();
             gensmear->Write();
+
+            jetpt_match->Write();
+            jetpt_miss->Write();
+            jetpt_fake->Write();
        	}
+	else{
+	    eventTree->Write();
+            jetChargeTree->Write();
+            towerscale->Write();
+	    trackingeff->Write();
+            hadroncorr50->Write();
+            detsmear->Write();
+            gensmear->Write();
+	}
 
 /////////////////////////////////////////
 	cout << endl << "Writing to:  " << fout->GetName() << endl;
