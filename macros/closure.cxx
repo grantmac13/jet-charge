@@ -46,7 +46,7 @@ int main (int argc, const char** argv) {
 
 
 	//input files
-	TFile *f = new TFile(("~/ppJCandBF/out/sim/response/p6_R" + radius + "_k" + kappa + ".root").c_str(),"READ");
+	TFile *f = new TFile(("~/ppJCandBF/out/sim/response/p6_R" + radius + "_k" + kappa + "_syst.root").c_str(),"READ");
 	//responses
 	RooUnfoldResponse *res1D_q_A = (RooUnfoldResponse*) f->Get("sampleA_q_response");
 	RooUnfoldResponse *res1D_pt_A = (RooUnfoldResponse*) f->Get("sampleA_pt_response");
