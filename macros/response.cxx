@@ -64,12 +64,19 @@ int main(int argc, const char** argv){
     
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~hists~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
     
-    const int nJetPtBins = 5; // use 4 jet pt ranges, need bin below 10-15 GeV
-    double jetPtLo[nJetPtBins] = { 5.0, 10.0, 15.0, 20.0, 30.0};
-    double jetPtHi[nJetPtBins] = {10.0, 15.0, 20.0, 30.0, 40.0};
-    double jetptEdges[nJetPtBins+1] = {5.0, 10.0, 15.0, 20.0, 30.0, 40.0};
+//    const int nJetPtBins = 5; // use 4 jet pt ranges, need bin below 10-15 GeV
+//    double jetPtLo[nJetPtBins] = { 5.0, 10.0, 15.0, 20.0, 30.0};
+//    double jetPtHi[nJetPtBins] = {10.0, 15.0, 20.0, 30.0, 40.0};
+//    double jetptEdges[nJetPtBins+1] = {5.0, 10.0, 15.0, 20.0, 30.0, 40.0};
+
+    // temporary to make 5 GeV bins
+    const int nJetPtBins = 9; // use 4 jet pt ranges, need bin below 10-15 GeV
+    double jetptEdges[nJetPtBins+1] = {15.0, 20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0, 55.0, 60.0};
+
+    const int npartJetPtBins = 15; // use 4 jet pt ranges, need bin below 10-15 GeV
+    double partjetptEdges[npartJetPtBins+1] = {5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0, 55.0, 60.0, 65.0, 70.0, 75.0, 80.0};
     
-    cout << "DEBUG: this gets passed as kappa--" << argv[5] << "\n";
+//    cout << "DEBUG: this gets passed as kappa--" << argv[5] << "\n";
     // 'sim' is currently passed in the position (argv[4]) for kappa.. need to add if(response) in macro_submit_new.csh
     // set arg = "$outLocation $outName $inFiles $inputType $kappa"
     
@@ -83,7 +90,7 @@ int main(int argc, const char** argv){
     
     const string kappa = (string) argv[5];
     double k = str_to_double(kappa);
-     
+    
     
 //    int nbins = 25; double binlo = -2.5; double binhi = 2.5; // should work, have extra bin on low and hi end for unfolding
     int nbins = 35; double binlo = -3.5; double binhi = 3.5; // should work, have extra bin on low and hi end for unfolding
@@ -95,20 +102,32 @@ int main(int argc, const char** argv){
         qBinEdges[i] = binlo + (binhi - binlo)*i/nbins;
     }
     
-    cout << "what should be the bin edge: " << binlo << "\n";
-    cout << "bin edge calculated: " << qBinEdges[1] << "\n";
+//    cout << "what should be the bin edge: " << binlo << "\n";
+//    cout << "bin edge calculated: " << qBinEdges[1] << "\n";
 //    TH2D* partQvPt = new TH2D("partQvPt", ";Q^{jet};p_{T} (GeV/c)", nbins, binlo, binhi, 15,  5.0, 80.0); // previously used jet pt binning
-    TH2D* partQvPt = new TH2D("partQvPt", ";Q^{jet};p_{T} (GeV/c)", nbins, binlo, binhi, nJetPtBins, jetptEdges); // want particle level to be binned the same as detector level to compare Q in same jet pt range
+
+    TH2D* partQvPt = new TH2D("partQvPt", ";Q^{jet};p_{T} (GeV/c)", nbins, binlo, binhi, npartJetPtBins, partjetptEdges); // want particle level to be binned the same as detector level to compare Q in same jet pt range
     TH2D* detQvPt = new TH2D("detQvPt", ";Q^{jet};p_{T} (GeV/c)", nbins, binlo, binhi, nJetPtBins, jetptEdges);
     
     TH1D* det_pt = new TH1D("det_pt", "", nJetPtBins, jetptEdges);
-    TH1D* part_pt = new TH1D("part_pt", "", nJetPtBins, jetptEdges);
+    TH1D* part_pt = new TH1D("part_pt", "", npartJetPtBins, partjetptEdges);
+
 
     TH1D* partQ = new TH1D("partQ", "", nbins, binlo, binhi);
     TH1D* detQ = new TH1D("detQ", "", nbins, binlo, binhi);
+
+
+    TH2D* partMvPt = new TH2D("partMvPt", ";M (GeV/c);p_{T} (GeV/c)", 14, 0.0, 14.0, npartJetPtBins, partjetptEdges); // want particle level to be binned the same as detector level to compare Q in same jet pt range
+    TH2D* detMvPt = new TH2D("detMvPt", ";M (GeV/c);p_{T} (GeV/c)", 14, 0.0, 14.0, nJetPtBins, jetptEdges);
+
+
+    TH1D* partM = new TH1D("partM", "", 14, 0.0, 14.0);
+    TH1D* detM = new TH1D("detM", "", 14, 0.0, 14.0);
+
     
-    cout << "what the bin edge really is: " << partQ->GetBinLowEdge(1) << "\n";
+//    cout << "what the bin edge really is: " << partQ->GetBinLowEdge(1) << "\n";
     
+
     //responses for systematic uncertainty variation
     RooUnfoldResponse *q_pt_res_nom = new RooUnfoldResponse(detQvPt, partQvPt, "q_pt_res_nom"); //nominal
     RooUnfoldResponse *q_pt_res_TS = new RooUnfoldResponse(detQvPt, partQvPt, "q_pt_res_TS"); //tower scale
@@ -126,6 +145,11 @@ int main(int argc, const char** argv){
     RooUnfoldResponse *pt_response = new RooUnfoldResponse(det_pt, part_pt, "pt_response");
     RooUnfoldResponse *q_response = new RooUnfoldResponse(detQ, partQ, "q_response");
 
+
+    RooUnfoldResponse *m_pt_response = new RooUnfoldResponse(detMvPt, partMvPt, "m_pt_response");
+    RooUnfoldResponse *m_response = new RooUnfoldResponse(detM, partM, "m_response");
+
+
     std::vector<RooUnfoldResponse*> syst_res = {q_pt_res_nom, q_pt_res_TS, q_pt_res_TU, q_pt_res_HC50, q_pt_res_DS, q_pt_res_GS};
     
 
@@ -138,22 +162,37 @@ int main(int argc, const char** argv){
 
     ////////////////////////////////////////////
     // histograms for closure test
-    TH1D* sampleA_pt_gen = new TH1D("sampleA_pt_gen", "", nJetPtBins, jetptEdges);
+    TH1D* sampleA_pt_gen = new TH1D("sampleA_pt_gen", "", npartJetPtBins, partjetptEdges);
     TH1D* sampleA_pt_det = new TH1D("sampleA_pt_det", "", nJetPtBins, jetptEdges);
     TH1D* sampleA_q_gen = new TH1D("sampleA_q_gen", "", nbins, binlo, binhi);
     TH1D* sampleA_q_det = new TH1D("sampleA_q_det", "", nbins, binlo, binhi);
 
-    TH1D* sampleB_pt_gen = new TH1D("sampleB_pt_gen", "", nJetPtBins, jetptEdges);
+    TH1D* sampleA_m_gen = new TH1D("sampleA_m_gen", "", 14, 0.0, 14.0);
+    TH1D* sampleA_m_det = new TH1D("sampleA_m_det", "", 14, 0.0, 14.0);
+
+
+    TH1D* sampleB_pt_gen = new TH1D("sampleB_pt_gen", "", npartJetPtBins, partjetptEdges);
     TH1D* sampleB_pt_det = new TH1D("sampleB_pt_det", "", nJetPtBins, jetptEdges);
     TH1D* sampleB_q_gen = new TH1D("sampleB_q_gen", "", nbins, binlo, binhi);
     TH1D* sampleB_q_det = new TH1D("sampleB_q_det", "", nbins, binlo, binhi);
 
+    TH1D* sampleB_m_gen = new TH1D("sampleB_m_gen", "", 14, 0.0, 14.0);
+    TH1D* sampleB_m_det = new TH1D("sampleB_m_det", "", 14, 0.0, 14.0);
 
-    TH2D* sampleA_q_pt_gen = new TH2D("sampleA_q_pt_gen", "", nbins, binlo, binhi, nJetPtBins, jetptEdges);
+
+    TH2D* sampleA_q_pt_gen = new TH2D("sampleA_q_pt_gen", "", nbins, binlo, binhi, npartJetPtBins, partjetptEdges);
     TH2D* sampleA_q_pt_det = new TH2D("sampleA_q_pt_det", "", nbins, binlo, binhi, nJetPtBins, jetptEdges);
 
-    TH2D* sampleB_q_pt_gen = new TH2D("sampleB_q_pt_gen", "", nbins, binlo, binhi, nJetPtBins, jetptEdges);
+    TH2D* sampleB_q_pt_gen = new TH2D("sampleB_q_pt_gen", "", nbins, binlo, binhi, npartJetPtBins, partjetptEdges);
     TH2D* sampleB_q_pt_det = new TH2D("sampleB_q_pt_det", "", nbins, binlo, binhi, nJetPtBins, jetptEdges);
+
+
+    TH2D* sampleA_m_pt_gen = new TH2D("sampleA_m_pt_gen", "", 14, 0.0, 14.0, npartJetPtBins, partjetptEdges);
+    TH2D* sampleA_m_pt_det = new TH2D("sampleA_m_pt_det", "", 14, 0.0, 14.0, nJetPtBins, jetptEdges);
+
+    TH2D* sampleB_m_pt_gen = new TH2D("sampleB_m_pt_gen", "", 14, 0.0, 14.0, npartJetPtBins, partjetptEdges);
+    TH2D* sampleB_m_pt_det = new TH2D("sampleB_m_pt_det", "", 14, 0.0, 14.0, nJetPtBins, jetptEdges);
+
 
 
     // counts histograms for bin dropping
@@ -181,15 +220,25 @@ int main(int argc, const char** argv){
     RooUnfoldResponse *sampleA_pt_response = new RooUnfoldResponse(det_pt, part_pt, "sampleA_pt_response");
     RooUnfoldResponse *sampleA_q_response = new RooUnfoldResponse(nbins, binlo, binhi, "sampleA_q_response");
 
+    RooUnfoldResponse *sampleA_m_response = new RooUnfoldResponse(detM, partM, "sampleA_m_response");
+
+
     RooUnfoldResponse *sampleA_q_pt_response = new RooUnfoldResponse(detQvPt, partQvPt, "sampleA_q_pt_response");
     RooUnfoldResponse *sampleA_q_pt_response_counts = new RooUnfoldResponse(detQvPt, partQvPt, "sampleA_q_pt_response_counts");
+
+    RooUnfoldResponse *sampleA_m_pt_response = new RooUnfoldResponse(detMvPt, partMvPt, "sampleA_m_pt_response");
 
 
     RooUnfoldResponse *sampleB_pt_response = new RooUnfoldResponse(det_pt, part_pt, "sampleB_pt_response");
     RooUnfoldResponse *sampleB_q_response = new RooUnfoldResponse(nbins, binlo, binhi, "sampleB_q_response");
 
+    RooUnfoldResponse *sampleB_m_response = new RooUnfoldResponse(detM, partM, "sampleB_m_response");
+
+
     RooUnfoldResponse *sampleB_q_pt_response = new RooUnfoldResponse(detQvPt, partQvPt, "sampleB_q_pt_response");
     RooUnfoldResponse *sampleB_q_pt_response_counts = new RooUnfoldResponse(detQvPt, partQvPt, "sampleB_q_pt_response_counts");
+
+    RooUnfoldResponse *sampleB_m_pt_response = new RooUnfoldResponse(detMvPt, partMvPt, "sampleB_m_pt_response");
     ////////////////////////////////////////////
 
     vector<RooUnfoldResponse*> base_res = {q_response, pt_response, q_pt_response, q_pt_response_counts};
@@ -203,6 +252,8 @@ int main(int argc, const char** argv){
     vector<TH2D*> sampleB_h2D = {sampleB_q_pt_gen, sampleB_q_pt_det, sampleB_q_pt_gen_counts, sampleB_q_pt_det_counts};
 
 
+//    cout << "STARTING SYSTEMATICS LOOP\n";
+
     int nSources = 6;
     
     string tree_name[nSources] = {"jetChargeTree", "towerscale", "trackingeff", "hadroncorr50", "detsmear", "gensmear"};
@@ -211,6 +262,9 @@ int main(int argc, const char** argv){
         
         vector<double> *det_jetpt = 0;
         vector<double> *part_jetpt = 0;
+
+        vector<double> *det_jetmass = 0;
+        vector<double> *part_jetmass = 0;
         vector<vector<double> > *det_conspt = 0; vector<vector<double> > *det_chcons = 0;
         vector<vector<double> > *part_conspt = 0; vector<vector<double> > *part_chcons = 0;
         
@@ -218,6 +272,10 @@ int main(int argc, const char** argv){
         vector<vector<double> > *miss_conspt = 0; vector<vector<double> > *miss_chcons = 0;
         vector<double> *fake_jetpt = 0;
         vector<vector<double> > *fake_conspt = 0; vector<vector<double> > *fake_chcons = 0;
+
+        vector<double> *miss_jetmass = 0;
+        vector<double> *fake_jetmass = 0;
+
     
         double weight = 1;    
 
@@ -229,10 +287,18 @@ int main(int argc, const char** argv){
         t->SetBranchAddress("part_conspt", &part_conspt);
         t->SetBranchAddress("det_chcons", &det_chcons);
         t->SetBranchAddress("part_chcons", &part_chcons);
+
+	if(iSyst == 0){
+		t->SetBranchAddress("part_jetmass", &part_jetmass);
+		t->SetBranchAddress("det_jetmass", &det_jetmass);
+		t->SetBranchAddress("miss_jetmass", &miss_jetmass);
+		t->SetBranchAddress("fake_jetmass", &fake_jetmass);
+	}
         
         t->SetBranchAddress("miss_jetpt", &miss_jetpt);
         t->SetBranchAddress("miss_conspt", &miss_conspt);
         t->SetBranchAddress("miss_chcons", &miss_chcons);
+
         
         t->SetBranchAddress("fake_jetpt", &fake_jetpt);
         t->SetBranchAddress("fake_conspt", &fake_conspt);
@@ -244,8 +310,6 @@ int main(int argc, const char** argv){
             // take each event
             t->GetEntry(i);
             double clos_rand = gRandom->Uniform(0.0, 1.0); //randomly split events into sampleA, sampleB
-
-
 
             for(int j = 0; j < (int) det_jetpt->size(); j++){
                 // loop over matched jets and fill response
@@ -266,11 +330,19 @@ int main(int argc, const char** argv){
                         jc_d += pow( (d_cons_pt/d_pt) , k ) * det_chcons->at(j).at(ii);
                     }
                 }
+
+		// for systematic loop
                 syst_res[iSyst]->Fill(jc_d, d_pt, jc_p, p_pt, weight);
+
                 if(iSyst == 0){
                     q_pt_response->Fill(jc_d, d_pt, jc_p, p_pt, weight);
                     q_pt_response_counts->Fill(jc_d, d_pt, jc_p, p_pt);
                     pt_response->Fill(d_pt, p_pt, weight); // fill jet pt response with matched jets
+
+		    // add mass responses here
+		    m_pt_response->Fill( det_jetmass->at(j), d_pt, part_jetmass->at(j), p_pt, weight );
+		    m_response->Fill( det_jetmass->at(j), part_jetmass->at(j), weight );
+
 
                     if(clos_rand > 0.5){
                         sampleA_pt_gen->Fill(p_pt, weight);
@@ -296,10 +368,20 @@ int main(int argc, const char** argv){
 
                         sampleA_pt_response->Fill(d_pt, p_pt, weight);
                         sampleA_q_response->Fill(jc_d, jc_p, weight);
-
                         sampleA_q_pt_response->Fill(jc_d, d_pt, jc_p, p_pt, weight);
+
+
+			// add mass responses for sample A here
+			sampleA_m_gen->Fill( part_jetmass->at(j), weight );
+			sampleA_m_det->Fill( det_jetmass->at(j), weight );
+
+                        sampleA_m_pt_gen->Fill( part_jetmass->at(j), p_pt, weight );
+                        sampleA_m_pt_det->Fill( det_jetmass->at(j), d_pt, weight );
+
+			sampleA_m_pt_response->Fill( det_jetmass->at(j), d_pt, part_jetmass->at(j), p_pt, weight );
+			sampleA_m_response->Fill( det_jetmass->at(j), part_jetmass->at(j), weight );
                     }
-                    if(clos_rand < 0.5){
+                    else if(clos_rand < 0.5){
                         sampleB_pt_gen->Fill(p_pt, weight);
                         sampleB_pt_det->Fill(d_pt, weight);
 
@@ -323,8 +405,19 @@ int main(int argc, const char** argv){
 
                         sampleB_pt_response->Fill(d_pt, p_pt, weight);
                         sampleB_q_response->Fill(jc_d, jc_p, weight);
-
                         sampleB_q_pt_response->Fill(jc_d, d_pt, jc_p, p_pt, weight);
+
+
+			// add mass responses for sample B here
+
+			sampleB_m_gen->Fill( part_jetmass->at(j), weight );
+			sampleB_m_det->Fill( det_jetmass->at(j), weight );
+
+                        sampleB_m_pt_gen->Fill( part_jetmass->at(j), p_pt, weight );
+                        sampleB_m_pt_det->Fill( det_jetmass->at(j), d_pt, weight );
+
+			sampleB_m_pt_response->Fill( det_jetmass->at(j), d_pt, part_jetmass->at(j), p_pt, weight );
+			sampleB_m_response->Fill( det_jetmass->at(j), part_jetmass->at(j), weight );
                     }
                 
 
@@ -373,7 +466,7 @@ int main(int argc, const char** argv){
                     }
 		}
             }
-        
+
             for(int jj = 0; jj < (int) miss_jetpt->size(); jj++){
                 // fill response misses with misses from particle level
                 double jc_m = 0.0;
@@ -391,30 +484,47 @@ int main(int argc, const char** argv){
                     q_pt_response->Miss(jc_m, m_pt, weight);
                     q_pt_response_counts->Miss(jc_m, m_pt);
                     pt_response->Miss(m_pt, weight);
-                
-                    if(clos_rand > 0.5){
+
+		    m_pt_response->Miss( miss_jetmass->at(jj), m_pt, weight );
+		    m_response->Miss( miss_jetmass->at(jj), weight );
+		    
+		    if(clos_rand > 0.5){
                         sampleA_pt_gen->Fill(m_pt, weight);
                         sampleA_q_gen->Fill(jc_m, weight);
-
-                        sampleA_pt_response->Miss(m_pt, weight);
-                        sampleA_q_response->Miss(jc_m, weight);
 
                         sampleA_q_pt_gen->Fill(jc_m, m_pt, weight);
                         sampleA_q_pt_gen_counts->Fill(jc_m, m_pt);
 
+                        sampleA_pt_response->Miss(m_pt, weight);
+                        sampleA_q_response->Miss(jc_m, weight);
                         sampleA_q_pt_response->Miss(jc_m, m_pt, weight);
+
+
+			// add mass responses for sample A here
+			sampleA_m_pt_response->Miss( miss_jetmass->at(jj), m_pt, weight );
+			sampleA_m_response->Miss( miss_jetmass->at(jj), weight );
+
+			sampleA_m_gen->Fill( miss_jetmass->at(jj), weight );
+                        sampleA_m_pt_gen->Fill( miss_jetmass->at(jj), m_pt, weight );
                     }
-                    if(clos_rand < 0.5){
+                    else if(clos_rand < 0.5){
                         sampleB_pt_gen->Fill(m_pt, weight);
                         sampleB_q_gen->Fill(jc_m, weight);
-
-                        sampleB_pt_response->Miss(m_pt, weight);
-                        sampleB_q_response->Miss(jc_m, weight);
 
                         sampleB_q_pt_gen->Fill(jc_m, m_pt, weight);
                         sampleB_q_pt_gen_counts->Fill(jc_m, m_pt);
 
+                        sampleB_pt_response->Miss(m_pt, weight);
+                        sampleB_q_response->Miss(jc_m, weight);
                         sampleB_q_pt_response->Miss(jc_m, m_pt, weight);
+
+
+			// add mass responses for sample B here
+			sampleB_m_pt_response->Miss( miss_jetmass->at(jj), m_pt, weight );
+			sampleB_m_response->Miss( miss_jetmass->at(jj), weight );
+
+			sampleB_m_gen->Fill( miss_jetmass->at(jj), weight );
+                        sampleB_m_pt_gen->Fill( miss_jetmass->at(jj), m_pt, weight );
                     }
 		}
             }
@@ -432,24 +542,45 @@ int main(int argc, const char** argv){
                     q_pt_response->Fake(jc_f, f_pt, weight);
                     q_pt_response_counts->Fake(jc_f, f_pt);
                     pt_response->Fake(f_pt, weight);
-                
-                    if(clos_rand > 0.5){
-                        sampleA_pt_response->Fake(f_pt, weight);
-                        sampleA_q_response->Fake(jc_f, weight);
-
+                    
+		    m_pt_response->Fake( fake_jetmass->at(jj), f_pt, weight );
+		    m_response->Fake( fake_jetmass->at(jj), weight );
+                    
+		    if(clos_rand > 0.5){
                         sampleA_q_pt_det->Fill(jc_f, f_pt, weight);
+			sampleA_pt_det->Fill(f_pt, weight);
+
                         sampleA_q_pt_det_counts->Fill(jc_f, f_pt);
 
+                        sampleA_pt_response->Fake(f_pt, weight);
+                        sampleA_q_response->Fake(jc_f, weight);
                         sampleA_q_pt_response->Fake(jc_f, f_pt, weight);
-                    }
-                    if(clos_rand < 0.5){
-                        sampleB_pt_response->Fake(f_pt, weight);
-                        sampleB_q_response->Fake(jc_f, weight);
 
+
+			// add mass responses for sample A here
+			sampleA_m_pt_response->Fake( fake_jetmass->at(jj), f_pt, weight );
+			sampleA_m_response->Fake( fake_jetmass->at(jj), weight );
+
+			sampleA_m_det->Fill( fake_jetmass->at(jj), weight );
+                        sampleA_m_pt_det->Fill( fake_jetmass->at(jj), f_pt, weight );
+                    }
+                    else if(clos_rand < 0.5){
                         sampleB_q_pt_det->Fill(jc_f, f_pt, weight);
+			sampleB_pt_det->Fill(f_pt, weight);
+
                         sampleB_q_pt_det_counts->Fill(jc_f, f_pt);
 
+                        sampleB_pt_response->Fake(f_pt, weight);
+                        sampleB_q_response->Fake(jc_f, weight);
                         sampleB_q_pt_response->Fake(jc_f, f_pt, weight);
+
+
+			// add mass responses for sample B here
+			sampleB_m_pt_response->Fake( fake_jetmass->at(jj), f_pt, weight );
+			sampleB_m_response->Fake( fake_jetmass->at(jj), weight );
+
+			sampleB_m_det->Fill( fake_jetmass->at(jj), weight );
+                        sampleB_m_pt_det->Fill( fake_jetmass->at(jj), f_pt, weight );
 		    }
                 }
             }
@@ -459,14 +590,14 @@ int main(int argc, const char** argv){
     
     } // end systematic loop
     
-    cout << "is the bin edge still where it should be?: " << partQ->GetBinLowEdge(1) << "\n";
+//    cout << "is the bin edge still where it should be?: " << partQ->GetBinLowEdge(1) << "\n";
     
     TFile *fout = new TFile(((string) argv[1]+(string) argv[2]).c_str(),"RECREATE");
     cout << "DEBUG: output file name is " << fout->GetName() << endl;
     
-    //q_pt_response->Write();
-    //q_pt_response_counts->Write();
-    //q_response->Write();
+    m_pt_response->Write();
+    //m_pt_response_counts->Write();
+    m_response->Write();
     //pt_response->Write();
     match_plus_miss->Write();
 
@@ -500,6 +631,24 @@ int main(int argc, const char** argv){
         syst_res[i]->Write();
     }
     
+//    m_pt_response->Write();
+    sampleA_m_response->Write();
+    sampleA_m_pt_response->Write();
+    sampleB_m_response->Write();
+    sampleB_m_pt_response->Write();
+
+
+    sampleA_m_gen->Write();
+    sampleA_m_det->Write();
+    sampleB_m_gen->Write();
+    sampleB_m_det->Write();
+
+    sampleA_m_pt_gen->Write();
+    sampleA_m_pt_det->Write();
+    sampleB_m_pt_gen->Write();
+    sampleB_m_pt_det->Write();
+
+
 
     cout << "Wrote to " << fout->GetName() << endl;
     

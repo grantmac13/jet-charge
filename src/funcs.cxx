@@ -211,7 +211,7 @@ bool dropLowStatEvent(int ev, std::vector<int> drop_event_n)
   //gets the cross section for each pT bin for run 12
   double LookupRun12Xsec( TString filename ){
     const int NUMBEROFPT = 11;
-    //! const char *PTBINS[NUMBEROFPT]={"2_3","3_4","4_5","5_7","7_9","9_11","11_15","15_20","20_25","25_35","35_-1"};                                      
+    //! const char *PTBINS[NUMBEROFPT]={"2_3","3_4","4_5","5_7","7_9","9_11","11_15","15_20","20_25","25_35","35_-1"};
     const static float XSEC[NUMBEROFPT] = {9.00581646, 1.461908221, 0.3544350863, 0.1513760388, 0.02488645725, 0.005845846143, 0.002304880181, 0.000342661835, 4.562988397e-05, 9.738041626e-06, 5.019978175e-07};
     const static float NUMBEROFEVENT[NUMBEROFPT] = {2100295, 600300, 600300, 300289, 300289, 300289, 160295, 100302, 80293, 76303, 23307};
     const static std::vector<std::string> vptbins={"pp12Pico_pt2_3","pp12Pico_pt3_4","pp12Pico_pt4_5","pp12Pico_pt5_7","pp12Pico_pt7_9","pp12Pico_pt9_11","pp12Pico_pt11_15","pp12Pico_pt15_20","pp12Pico_pt20_25","pp12Pico_pt25_35","35_-1"};
@@ -228,13 +228,14 @@ bool dropLowStatEvent(int ev, std::vector<int> drop_event_n)
   //This function simply converts TStarJetVectors from the event into PseudoJets for later clustering into jets with FastJet.
   //It also very importantly assigns a mass to each particle after the conversion.
   //The assigned mass is dependent on whether the function call is for particle-level (e.g. Pythia) [where we know the rest masses] or detector-level (e.g. Geant, data) [where we don't know them].
-  void GatherParticles ( TStarJetVectorContainer<TStarJetVector> * container, TStarJetVector *sv, std::vector<fastjet::PseudoJet> & Particles, const bool full, const bool py){  //, TDatabasePDG *pdg){
+  void GatherParticles ( TStarJetVectorContainer<TStarJetVector> * container, TStarJetVector *sv, std::vector<fastjet::PseudoJet> & Particles, const bool full, const bool py, TDatabasePDG *pdg){
     for ( int i = 0; i < container->GetEntries() ; ++i ) {
       sv = container->Get(i);
       //cout << "DEBUG: TStarJetVector info: " << 
       fastjet::PseudoJet current = fastjet::PseudoJet( *sv );
 
 
+/*
 	// comment out after getting agreement with Isaac
       if (sv->GetCharge() != 0 && !py) { // charged at detector-level -> charged pion mass
         current.reset_PtYPhiM(sqrt(current.perp2()), current.rap(), current.phi(), chPionMass); //assigning pion mass to charged particles
@@ -243,8 +244,10 @@ bool dropLowStatEvent(int ev, std::vector<int> drop_event_n)
         current.reset_PtYPhiM(sqrt(current.perp2()), current.rap(), current.phi(), 0); //neutral particles massless!
       }
       else if (py) { // at particle-level -> PDG mass
-        current.reset_PtYPhiM(sqrt(current.perp2()), current.rap(), current.phi(), 0 /* pdg->GetParticle(sv->mc_pdg_pid())->Mass() */);
+//        current.reset_PtYPhiM(sqrt(current.perp2()), current.rap(), current.phi(), 0 );
+        current.reset_PtYPhiM(sqrt(current.perp2()), current.rap(), current.phi(), pdg->GetParticle(sv->mc_pdg_pid())->Mass() );
       }
+*/
 
       //DEBUG:
       /*

@@ -170,6 +170,8 @@ int main(int argc, const char **argv){
 	// JET CHARGE
 	vector<double> part_jetpt; vector<vector<double> > part_conspt; vector<vector<double> > part_chcons;
 	vector<double>  det_jetpt; vector<vector<double> >  det_conspt; vector<vector<double> >  det_chcons;
+	vector<vector<double> > part_conseta; vector<vector<double> > part_consphi;
+
 	vector<double> miss_jetpt; vector<vector<double> > miss_conspt; vector<vector<double> > miss_chcons;
 	vector<double> fake_jetpt; vector<vector<double> > fake_conspt; vector<vector<double> > fake_chcons;
 	
@@ -204,6 +206,11 @@ int main(int argc, const char **argv){
 
 	jetChargeTree->Branch("part_conspt", &part_conspt);
 	jetChargeTree->Branch("det_conspt", &det_conspt);
+
+	jetChargeTree->Branch("part_conseta", &part_conseta);
+	jetChargeTree->Branch("part_consphi", &part_consphi);
+
+
 	jetChargeTree->Branch("part_chcons", &part_chcons);
 	jetChargeTree->Branch("det_chcons", &det_chcons);
 	jetChargeTree->Branch("weight", &p_wt);
@@ -227,12 +234,12 @@ int main(int argc, const char **argv){
 
 	jetChargeTree->Branch("fake_jetmass", &fake_jetmass);
 
-
+/*
 	jetChargeTree->Branch("part_jetNEF", &part_jetNEF);
 	jetChargeTree->Branch("det_jetNEF", &det_jetNEF);
 	jetChargeTree->Branch("miss_jetNEF", &miss_jetNEF);
 	jetChargeTree->Branch("fake_jetNEF", &fake_jetNEF);
-
+*/
 
     
         TTree *towerscale = new TTree("towerscale", "towerscale");
@@ -364,6 +371,8 @@ int main(int argc, const char **argv){
 	//defining the algorithm and radius parameter for clustering jets
 	JetDefinition jet_def(antikt_algorithm, radius/*R*/);
 
+	TDatabasePDG *pdg = new TDatabasePDG();
+
 
 	//SELECTORS
 	// Constituent selectors
@@ -379,11 +388,12 @@ int main(int argc, const char **argv){
 	Selector select_det_jet_pt_min  = fastjet::SelectorPtMin( det_jet_ptmin );
 	Selector select_gen_jet_pt_min = fastjet::SelectorPtMin( jet_ptmin );
 	Selector select_jet_pt_max  = fastjet::SelectorPtMax( jet_ptmax );
-	Selector select_det_jet_m_min = fastjet::SelectorMassMin( 1.0/*0.0*/ /*mass_min*/ ); // for consistency with Isaac: seems that he was still applying this detector level cut, after applying this my particle level matched (to detector level) jets are consistent but when not requiring jets to be matched there remains inconsistency, specifically in particle level jet pt spectrum
-	Selector select_gen_jet_m_min = fastjet::SelectorMassMin( 0.0 );
+//	Selector select_det_jet_m_min = fastjet::SelectorMassMin( 1.0/*0.0*/ /*mass_min*/ ); // for consistency with Isaac: seems that he was still applying this detector level cut, after applying this my particle level matched (to detector level) jets are consistent but when not requiring jets to be matched there remains inconsistency, specifically in particle level jet pt spectrum
+//	Selector select_gen_jet_m_min = fastjet::SelectorMassMin( 0.0 );
 	
+	// remove jet mass cuts after achieving consistency with Isaac, but for now both gen- and det-level jet mass will be cut (at 0.0 and 1.0 respectivevly)
 	Selector sjet_gen = select_jet_rap && select_gen_jet_pt_min && select_jet_pt_max /*&& select_gen_jet_m_min*/;
-	Selector sjet_det = select_jet_rap && select_det_jet_pt_min && select_jet_pt_max && select_det_jet_m_min;
+	Selector sjet_det = select_jet_rap && select_det_jet_pt_min && select_jet_pt_max /*&& select_det_jet_m_min*/;
 	
 	vector<PseudoJet> p_Particles, g_Particles, p_Jets, g_Jets, g_Jets_Initial;
 	int p_n_accepted = 0; int g_n_accepted = 0; int p_NJets = 0; int g_NJets = 0;
@@ -440,6 +450,9 @@ int main(int argc, const char **argv){
 		// clear vectors that go into trees every event
 		part_jetpt.clear(); part_conspt.clear(); part_chcons.clear();
 		det_jetpt.clear(); det_conspt.clear(); det_chcons.clear();
+
+		part_conseta.clear(); part_consphi.clear();
+
 		miss_jetpt.clear(); miss_conspt.clear(); miss_chcons.clear();
 		fake_jetpt.clear(); fake_conspt.clear(); fake_chcons.clear();
 		// vectors that need to be cleared... had not been clearing misses and fakes here...
@@ -511,8 +524,8 @@ int main(int argc, const char **argv){
                 }
 
 /////////////////////////// APPLY SELECTORS
-		GatherParticles(p_container, p_sv, p_Particles, full, 1); //Pythia; full = 0 => charged-only, 1 => ch+ne
-		GatherParticles(g_container, g_sv, g_Particles, full, 0); //Pythia; full = 0 => charged-only, 1 => ch+ne
+		GatherParticles(p_container, p_sv, p_Particles, full, 1, pdg); //Pythia; full = 0 => charged-only, 1 => ch+ne
+		GatherParticles(g_container, g_sv, g_Particles, full, 0, pdg); //Geant
 
 		// from Isaac
                 if (iSyst == 2) {//varying the tracking efficiency randomly by 4%
@@ -636,6 +649,7 @@ int main(int argc, const char **argv){
 			// for constituent quantities to add to trees
 			// vector<vector<double> > in trees, clear the vector<double> each jet and add to the outer vector each jet
 			vector<double> part_jc_ch; vector<double> part_jc_pt; vector<double> det_jc_ch; vector<double> det_jc_pt;
+			vector<double> part_jc_eta; vector<double> part_jc_phi;
 			
 			double prior_adjust = 0;
 			
@@ -671,6 +685,10 @@ int main(int argc, const char **argv){
 						part_jc_ch.push_back(ch_cons);
 						part_jc_pt.push_back(pt_cons);
 
+						part_jc_eta.push_back( p_matches[i].constituents()[j].eta() );
+						part_jc_phi.push_back( p_matches[i].constituents()[j].phi() );
+
+
 						if(ch_cons == 0){
 							NEF_p += pt_cons/(double) part_pt;
 						}
@@ -694,7 +712,7 @@ int main(int argc, const char **argv){
 				det_jetpt.push_back(det_pt);
 				
 				part_jeteta.push_back(p_matches[i].eta());
-				part_jetphi.push_back(p_matches[i].phi());
+				part_jetphi.push_back(p_matches[i].eta());
 				det_jeteta.push_back(g_matches[i].eta());
 				det_jetphi.push_back(g_matches[i].phi());
 
@@ -710,6 +728,9 @@ int main(int argc, const char **argv){
 				det_conspt.push_back(det_jc_pt);
 				part_chcons.push_back(part_jc_ch);
 				det_chcons.push_back(det_jc_ch);
+
+				part_conseta.push_back(part_jc_eta);
+				part_consphi.push_back(part_jc_phi);
 
 
 //				part_jetpt_bf.push_back(part_pt);
@@ -841,12 +862,14 @@ int main(int argc, const char **argv){
 		} // if i require jets be matched
 		else{
 			vector<double> part_jc_ch; vector<double> part_jc_pt; vector<double> det_jc_ch; vector<double> det_jc_pt;
+			vector<double> part_jc_eta; vector<double> part_jc_phi;
 			for(int i = 0; i < max( p_Jets.size(), g_Jets.size() ); i++){
 				if(i < p_Jets.size() ){
 					double NEF_p = 0;
 					double part_pt = p_Jets[i].pt();
 				
 					part_jc_ch.clear(); part_jc_pt.clear();
+					part_jc_eta.clear(); part_jc_phi.clear();
 
 					p_n_cons.push_back(p_Jets[i].constituents().size());
 
@@ -858,6 +881,9 @@ int main(int argc, const char **argv){
 						part_jc_ch.push_back(ch_cons);
 						part_jc_pt.push_back(pt_cons);
 
+						part_jc_eta.push_back( p_Jets[i].constituents()[j].eta() );
+						part_jc_phi.push_back( p_Jets[i].constituents()[j].phi() );
+
 						if(ch_cons == 0){
 							NEF_p += pt_cons/(double) part_pt;
 						}
@@ -866,6 +892,10 @@ int main(int argc, const char **argv){
 					part_jetpt.push_back(part_pt);
 					part_conspt.push_back(part_jc_pt);
 					part_chcons.push_back(part_jc_ch);
+
+					part_conseta.push_back(part_jc_eta);
+					part_consphi.push_back(part_jc_phi);
+
 
 					part_jeteta.push_back(p_Jets[i].eta());
 					part_jetphi.push_back(p_Jets[i].phi());
