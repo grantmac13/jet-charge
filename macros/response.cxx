@@ -56,22 +56,27 @@ int main(int argc, const char** argv){
       exit(1);
     }
     
+
     // output files from running sim.cxx
     string fin_name = (string) argv[3];
     TFile *fin = new TFile(fin_name.c_str(),"READ");
     cout << "DEBUG: input file name is " << fin->GetName() << endl;
     
     
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~hists~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-    
-//    const int nJetPtBins = 5; // use 4 jet pt ranges, need bin below 10-15 GeV
-//    double jetPtLo[nJetPtBins] = { 5.0, 10.0, 15.0, 20.0, 30.0};
-//    double jetPtHi[nJetPtBins] = {10.0, 15.0, 20.0, 30.0, 40.0};
-//    double jetptEdges[nJetPtBins+1] = {5.0, 10.0, 15.0, 20.0, 30.0, 40.0};
+
+
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~hists~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//    
+    const int nJetPtBins = 4;
+//    double jetPtLo[nJetPtBins] = {15.0, 20.0, 25.0, 30.0};
+//    double jetPtHi[nJetPtBins] = {20.0, 25.0, 30.0, 40.0};
+
+    // may want to uniform-ize bins to 5 GeV consistently
+    double jetptEdges[nJetPtBins+1] = {15.0, 20.0, 25.0, 30.0, 40.0};
+    int jetptHiEdge = 50;
 
     // temporary to make 5 GeV bins
-    const int nJetPtBins = 9; // use 4 jet pt ranges, need bin below 10-15 GeV
-    double jetptEdges[nJetPtBins+1] = {15.0, 20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0, 55.0, 60.0};
+//    const int nJetPtBins = 9; // use 4 jet pt ranges, need bin below 10-15 GeV
+//    double jetptEdges[nJetPtBins+1] = {15.0, 20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0, 55.0, 60.0};
 
     const int npartJetPtBins = 15; // use 4 jet pt ranges, need bin below 10-15 GeV
     double partjetptEdges[npartJetPtBins+1] = {5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0, 55.0, 60.0, 65.0, 70.0, 75.0, 80.0};
@@ -126,7 +131,50 @@ int main(int argc, const char** argv){
 
     
 //    cout << "what the bin edge really is: " << partQ->GetBinLowEdge(1) << "\n";
-    
+
+
+    // TEMPORARY: HARDCODING RADIUS HERE
+
+    // out/sim/hists/unmatchedp6_R04_k00.root
+//    TFile *p6unmatch = new TFile("~/ppJCandBF/out/sim/hists/unmatchedp6_R"+rad+"_k"+kapstr+".root", "READ");
+    TFile *p6unmatch = new TFile( ("~/ppJCandBF/out/sim/hists/unmatchedp6_R04_k"+kappa+".root").c_str(), "READ");
+    TH2D* qp6_2D = (TH2D*) p6unmatch->Get("QvPt_p");
+    qp6_2D->SetDirectory(0);
+    p6unmatch->Close();
+//    TFile *h7unmatch = new TFile("~/for_grant/out/unmatchedh7_R"+rad+"_k"+kapstr+".root", "READ");
+    TFile *h7unmatch = new TFile( ("~/for_grant/out/unmatchedh7_R04_k"+kappa+".root").c_str(), "READ");
+    TH2D* qh7_2D = (TH2D*) h7unmatch->Get("qvpt");
+    qh7_2D->SetDirectory(0);
+    h7unmatch->Close();
+//    TFile *p8unmatch = new TFile("~/for_grant/out/unmatchedp8_R"+rad+"_k"+kapstr+".root", "READ");
+    TFile *p8unmatch = new TFile( ("~/for_grant/out/unmatchedp8_R04_k"+kappa+".root").c_str(), "READ");
+    TH2D* qp8_2D = (TH2D*) p8unmatch->Get("qvpt");
+    qp8_2D->SetDirectory(0);
+    p8unmatch->Close();
+
+
+    vector<TH1D*> qp6 = {qp6_2D->ProjectionX("qp6_0", qp6_2D->GetYaxis()->FindBin(20), qp6_2D->GetYaxis()->FindBin(25)-1),
+			 qp6_2D->ProjectionX("qp6_1", qp6_2D->GetYaxis()->FindBin(25), qp6_2D->GetYaxis()->FindBin(30)-1),
+			 qp6_2D->ProjectionX("qp6_2", qp6_2D->GetYaxis()->FindBin(30), qp6_2D->GetYaxis()->FindBin(40)-1),
+			};
+    vector<TH1D*> qh7 = {qh7_2D->ProjectionX("qh7_0", qh7_2D->GetYaxis()->FindBin(20), qh7_2D->GetYaxis()->FindBin(25)-1),
+			 qh7_2D->ProjectionX("qh7_1", qh7_2D->GetYaxis()->FindBin(25), qh7_2D->GetYaxis()->FindBin(30)-1),
+			 qh7_2D->ProjectionX("qh7_2", qh7_2D->GetYaxis()->FindBin(30), qh7_2D->GetYaxis()->FindBin(40)-1),
+			};
+    vector<TH1D*> qp8 = {qp8_2D->ProjectionX("qp8_0", qp8_2D->GetYaxis()->FindBin(20), qp8_2D->GetYaxis()->FindBin(25)-1),
+			 qp8_2D->ProjectionX("qp8_1", qp8_2D->GetYaxis()->FindBin(25), qp8_2D->GetYaxis()->FindBin(30)-1),
+			 qp8_2D->ProjectionX("qp8_2", qp8_2D->GetYaxis()->FindBin(30), qp8_2D->GetYaxis()->FindBin(40)-1),
+			};
+
+
+    for(int i = 0; i < (int) qp6.size(); i++){
+	qh7[i]->Divide(qp6[i]);
+	qp8[i]->Divide(qp6[i]);
+    }
+
+
+
+
 
     //responses for systematic uncertainty variation
     RooUnfoldResponse *q_pt_res_nom = new RooUnfoldResponse(detQvPt, partQvPt, "q_pt_res_nom"); //nominal
@@ -138,7 +186,7 @@ int main(int argc, const char** argv){
     
     
     // jetptEdges[nJetPtBins+1]
-    TH1D* match_plus_miss = new TH1D("jetpt_match_plus_miss", "", nJetPtBins, jetptEdges);
+    TH1D* match_plus_miss = new TH1D("jetpt_match_plus_miss", "", npartJetPtBins, partjetptEdges);
     
     RooUnfoldResponse *q_pt_response = new RooUnfoldResponse(detQvPt, partQvPt, "q_pt_response");
     RooUnfoldResponse *q_pt_response_counts = new RooUnfoldResponse(detQvPt, partQvPt, "q_pt_response_counts");
@@ -153,10 +201,17 @@ int main(int argc, const char** argv){
     std::vector<RooUnfoldResponse*> syst_res = {q_pt_res_nom, q_pt_res_TS, q_pt_res_TU, q_pt_res_HC50, q_pt_res_DS, q_pt_res_GS};
     
 
-    RooUnfoldResponse *res_1D_1015 = new RooUnfoldResponse(detQ, partQ, "q_response_1015");
-    RooUnfoldResponse *res_1D_1520 = new RooUnfoldResponse(detQ, partQ, "q_response_1520");
-    RooUnfoldResponse *res_1D_2030 = new RooUnfoldResponse(detQ, partQ, "q_response_2030");
-    RooUnfoldResponse *res_1D_3040 = new RooUnfoldResponse(detQ, partQ, "q_response_3040");
+    RooUnfoldResponse *q_res2025_nom = new RooUnfoldResponse(detQ, partQ, "q_res2025_nom");
+    RooUnfoldResponse *q_res2530_nom = new RooUnfoldResponse(detQ, partQ, "q_res2530_nom");
+    RooUnfoldResponse *q_res3040_nom = new RooUnfoldResponse(detQ, partQ, "q_res3040_nom");
+
+    RooUnfoldResponse *q_res2025_h7smear = new RooUnfoldResponse(detQ, partQ, "q_res2025_h7smear");
+    RooUnfoldResponse *q_res2530_h7smear = new RooUnfoldResponse(detQ, partQ, "q_res2530_h7smear");
+    RooUnfoldResponse *q_res3040_h7smear = new RooUnfoldResponse(detQ, partQ, "q_res3040_h7smear");
+
+    RooUnfoldResponse *q_res2025_p8smear = new RooUnfoldResponse(detQ, partQ, "q_res2025_p8smear");
+    RooUnfoldResponse *q_res2530_p8smear = new RooUnfoldResponse(detQ, partQ, "q_res2530_p8smear");
+    RooUnfoldResponse *q_res3040_p8smear = new RooUnfoldResponse(detQ, partQ, "q_res3040_p8smear");
 
 
 
@@ -254,9 +309,20 @@ int main(int argc, const char** argv){
 
 //    cout << "STARTING SYSTEMATICS LOOP\n";
 
-    int nSources = 6;
+    int nSources = 7;
     
-    string tree_name[nSources] = {"jetChargeTree", "towerscale", "trackingeff", "hadroncorr50", "detsmear", "gensmear"};
+    string tree_name[nSources] = {"jetChargeTree", "towerscale", "trackingeff", "hadroncorr50", "detsmear", "gensmear", "jetChargeTree"};
+    string syst_name[nSources] = {"nom", "TS", "TU", "HC50", "DS", "GS", "QS"}; // Q smear should match nominal, but is split out into 1D responses so i will come back to this 
+    string lev[2] = {"part", "det"};
+
+    TH1D* syst_dists[nSources][nJetPtBins][2];
+    for(int i = 0; i < nSources; i++){
+	for(int j = 0; j < nJetPtBins; j++){
+	    syst_dists[i][j][0] = new TH1D( Form( (lev[0] + "_q_" + syst_name[i] + "_%1.0f%1.0f").c_str(), jetptEdges[j], jetptEdges[j+1] ), "", nbins, binlo, binhi );
+	    syst_dists[i][j][1] = new TH1D( Form( (lev[1] + "_q_" + syst_name[i] + "_%1.0f%1.0f").c_str(), jetptEdges[j], jetptEdges[j+1] ), "", nbins, binlo, binhi );
+	}
+    }
+
     
     for(int iSyst = 0; iSyst < nSources; iSyst++){
         
@@ -305,6 +371,9 @@ int main(int argc, const char** argv){
         t->SetBranchAddress("fake_chcons", &fake_chcons);
         
         t->SetBranchAddress("weight", &weight);
+
+
+	cout << "starting loop over entries\n";
     
         for(int i = 0; i < (int) t->GetEntries(); i++){
             // take each event
@@ -316,7 +385,7 @@ int main(int argc, const char** argv){
                 double jc_p = 0.0; double jc_d = 0.0;
                 double p_pt = part_jetpt->at(j);
                 double d_pt =  det_jetpt->at(j);
-                
+
 		if(iSyst == 0){
 	                match_plus_miss->Fill(p_pt, weight);
                 }
@@ -330,9 +399,65 @@ int main(int argc, const char** argv){
                         jc_d += pow( (d_cons_pt/d_pt) , k ) * det_chcons->at(j).at(ii);
                     }
                 }
+		if(iSyst == 6){
+			double prior_adjust_h7 = 0.0;
+			double prior_adjust_p8 = 0.0;
+
+			int ji = -1;
+			if(20 < p_pt && p_pt < 25){ji = 0;}
+			else if(25 < p_pt && p_pt < 30){ji = 1;}
+			else if(30 < p_pt && p_pt < 40){ji = 2;}
+
+			if(ji != -1){
+				prior_adjust_h7 = qh7[ji]->GetBinContent( qh7[ji]->GetXaxis()->FindBin(jc_p) );
+				prior_adjust_p8 = qp8[ji]->GetBinContent( qp8[ji]->GetXaxis()->FindBin(jc_p) );
+			}
+
+			for(int ij = 0; ij < nJetPtBins; ij++){
+				if( jetptEdges[ij] < p_pt && p_pt < jetptEdges[ij+1] ){
+					syst_dists[iSyst][ij][0]->Fill(jc_p, weight * prior_adjust_h7);
+				}
+			}
+			for(int ij = 0; ij < nJetPtBins; ij++){ // loop over jet bins
+				if( jetptEdges[ij] < d_pt && d_pt < jetptEdges[ij+1] ){ // if jet pt within jet pt bin, fill hist
+					syst_dists[iSyst][ij][1]->Fill(jc_d, weight * prior_adjust_h7);
+				}
+			}
+
+
+			if( 20 < d_pt && d_pt <25 && ji == 0 ){
+				q_res2025_nom->Fill(jc_d, jc_p, weight);
+				q_res2025_h7smear->Fill(jc_d, jc_p, weight * prior_adjust_h7);
+				q_res2025_p8smear->Fill(jc_d, jc_p, weight * prior_adjust_p8);
+			}
+			else if( 25 < d_pt && d_pt < 30 && ji == 1 ){
+				q_res2530_nom->Fill(jc_d, jc_p, weight);
+				q_res2530_h7smear->Fill(jc_d, jc_p, weight * prior_adjust_h7);
+				q_res2530_p8smear->Fill(jc_d, jc_p, weight * prior_adjust_p8);
+			}
+			else if( 30 < d_pt && d_pt < 40 && ji == 2 ){
+				q_res3040_nom->Fill(jc_d, jc_p, weight);
+				q_res3040_h7smear->Fill(jc_d, jc_p, weight * prior_adjust_h7);
+				q_res3040_p8smear->Fill(jc_d, jc_p, weight * prior_adjust_p8);
+			}
+		}
+
 
 		// for systematic loop
-                syst_res[iSyst]->Fill(jc_d, d_pt, jc_p, p_pt, weight);
+		else{
+			for(int ij = 0; ij < nJetPtBins; ij++){
+				if( jetptEdges[ij] < p_pt && p_pt < jetptEdges[ij+1] ){
+					syst_dists[iSyst][ij][0]->Fill(jc_p, weight);
+				}
+			}
+			for(int ij = 0; ij < nJetPtBins; ij++){ // loop over jet bins
+				if( jetptEdges[ij] < d_pt && d_pt < jetptEdges[ij+1] ){ // if jet pt within jet pt bin, fill hist
+					syst_dists[iSyst][ij][1]->Fill(jc_d, weight);
+				}
+			}
+
+	                syst_res[iSyst]->Fill(jc_d, d_pt, jc_p, p_pt, weight);
+		}
 
                 if(iSyst == 0){
                     q_pt_response->Fill(jc_d, d_pt, jc_p, p_pt, weight);
@@ -421,49 +546,50 @@ int main(int argc, const char** argv){
                     }
                 
 
-
+/*
                     // for 1D unfolding: matched jets that have both particle and detector level in pT range, use ->Fill()
                     // "detector level jets that match with particle level jet with jet pt in pt range but detector jet pt falls outside pT range go into fakes"
                     // "particle level jets that match with detector level jet with jet pt in pt range but particle jet pt falls outside pT range go into misses"
-                    if(10.0 < d_pt && d_pt < 15.0 && 10.0 < p_pt && p_pt < 15.0){ // am I requiring both detector and particle level jet pt or only one?
-                        res_1D_1015->Fill(jc_d, jc_p, weight);
-                    }
-                    else if(10.0 < p_pt && p_pt < 15.0){
-                        res_1D_1015->Miss(jc_p, weight);
-                    }
-                    else if(10.0 < d_pt && d_pt < 15.0){
-                        res_1D_1015->Fake(jc_d, weight);
-                    }
-
                     if(15.0 < d_pt && d_pt < 20.0 && 15.0 < p_pt && p_pt < 20.0){ // am I requiring both detector and particle level jet pt or only one?
-                        res_1D_1520->Fill(jc_d, jc_p, weight);
+                        q_res1520_nom->Fill(jc_d, jc_p, weight);
                     }
                     else if(15.0 < p_pt && p_pt < 20.0){
-                        res_1D_1520->Miss(jc_p, weight);
+                        q_res1520_nom->Miss(jc_p, weight);
                     }
                     else if(15.0 < d_pt && d_pt < 20.0){
-                        res_1D_1520->Fake(jc_d, weight);
+                        q_res1520_nom->Fake(jc_d, weight);
                     }
 
-                    if(20.0 < d_pt && d_pt < 30.0 && 20.0 < p_pt && p_pt < 30.0){ // am I requiring both detector and particle level jet pt or only one?
-                        res_1D_2030->Fill(jc_d, jc_p, weight);
+                    if(20.0 < d_pt && d_pt < 25.0 && 20.0 < p_pt && p_pt < 25.0){ // am I requiring both detector and particle level jet pt or only one?
+                        q_res2025_nom->Fill(jc_d, jc_p, weight);
                     }
-                    else if(20.0 < p_pt && p_pt < 30.0){
-                        res_1D_2030->Miss(jc_p, weight);
+                    else if(20.0 < p_pt && p_pt < 25.0){
+                        q_res2025_nom->Miss(jc_p, weight);
                     }
-                    else if(20.0 < d_pt && d_pt < 30.0){
-                        res_1D_2030->Fake(jc_d, weight);
+                    else if(20.0 < d_pt && d_pt < 25.0){
+                        q_res2025_nom->Fake(jc_d, weight);
+                    }
+
+                    if(25.0 < d_pt && d_pt < 30.0 && 25.0 < p_pt && p_pt < 30.0){ // am I requiring both detector and particle level jet pt or only one?
+                        q_res2530_nom->Fill(jc_d, jc_p, weight);
+                    }
+                    else if(25.0 < p_pt && p_pt < 30.0){
+                        q_res2530_nom->Miss(jc_p, weight);
+                    }
+                    else if(25.0 < d_pt && d_pt < 30.0){
+                        q_res2530_nom->Fake(jc_d, weight);
                     }
 
                     if(30.0 < d_pt && d_pt < 40.0 && 30.0 < p_pt && p_pt < 40.0){ // am I requiring both detector and particle level jet pt or only one?
-                        res_1D_3040->Fill(jc_d, jc_p, weight);
+                        q_res3040_nom->Fill(jc_d, jc_p, weight);
                     }
                     else if(30.0 < p_pt && p_pt < 40.0){
-                        res_1D_3040->Miss(jc_p, weight);
+                        q_res3040_nom->Miss(jc_p, weight);
                     }
                     else if(30.0 < d_pt && d_pt < 40.0){
-                        res_1D_3040->Fake(jc_d, weight);
+                        q_res3040_nom->Fake(jc_d, weight);
                     }
+*/
 		}
             }
 
@@ -479,7 +605,41 @@ int main(int argc, const char** argv){
                     double m_cons_pt = miss_conspt->at(jj).at(ii);
                     jc_m += pow( (m_cons_pt/m_pt), k ) * miss_chcons->at(jj).at(ii);
                 }
-                syst_res[iSyst]->Miss(jc_m, m_pt, weight);
+
+		if(iSyst == 6){
+			double prior_adjust_h7 = 0.0;
+			double prior_adjust_p8 = 0.0;
+
+			int ji = -1;
+			if(20 < m_pt && m_pt < 25){ji = 0;}
+			else if(25 < m_pt && m_pt < 30){ji = 1;}
+			else if(30 < m_pt && m_pt < 40){ji = 2;}
+
+			if(ji != -1){
+				prior_adjust_h7 = qh7[ji]->GetBinContent( qh7[ji]->GetXaxis()->FindBin(jc_m) );
+				prior_adjust_p8 = qp8[ji]->GetBinContent( qp8[ji]->GetXaxis()->FindBin(jc_m) );
+			}
+
+			if( ji == 0 ){
+				q_res2025_nom->Miss(jc_m, weight);
+				q_res2025_h7smear->Miss(jc_m, weight * prior_adjust_h7);
+				q_res2025_p8smear->Miss(jc_m, weight * prior_adjust_p8);
+			}
+			else if( ji == 1 ){
+				q_res2530_nom->Miss(jc_m, weight);
+				q_res2530_h7smear->Miss(jc_m, weight * prior_adjust_h7);
+				q_res2530_p8smear->Miss(jc_m, weight * prior_adjust_p8);
+			}
+			else if( ji == 2 ){
+				q_res3040_nom->Miss(jc_m, weight);
+				q_res3040_h7smear->Miss(jc_m, weight * prior_adjust_h7);
+				q_res3040_p8smear->Miss(jc_m, weight * prior_adjust_p8);
+			}
+		}
+
+		else{
+	                syst_res[iSyst]->Miss(jc_m, m_pt, weight);
+		}
                 if(iSyst == 0){
                     q_pt_response->Miss(jc_m, m_pt, weight);
                     q_pt_response_counts->Miss(jc_m, m_pt);
@@ -537,7 +697,41 @@ int main(int argc, const char** argv){
                     double f_cons_pt = fake_conspt->at(jj).at(ii);
                     jc_f += pow( (f_cons_pt/f_pt), k ) * fake_chcons->at(jj).at(ii);
                 }
-                syst_res[iSyst]->Fake(jc_f, f_pt, weight);
+
+		if(iSyst == 6){
+			double prior_adjust_h7 = 0.0;
+			double prior_adjust_p8 = 0.0;
+
+			int ji = -1;
+			if(20 < f_pt && f_pt < 25){ji = 0;}
+			else if(25 < f_pt && f_pt < 30){ji = 1;}
+			else if(30 < f_pt && f_pt < 40){ji = 2;}
+
+			if(ji != -1){
+				prior_adjust_h7 = qh7[ji]->GetBinContent( qh7[ji]->GetXaxis()->FindBin(jc_f) );
+				prior_adjust_p8 = qp8[ji]->GetBinContent( qp8[ji]->GetXaxis()->FindBin(jc_f) );
+			}
+
+			if( ji == 0 ){
+				q_res2025_nom->Fake(jc_f, weight);
+				q_res2025_h7smear->Fake(jc_f, weight * prior_adjust_h7);
+				q_res2025_p8smear->Fake(jc_f, weight * prior_adjust_p8);
+			}
+			else if( ji == 1 ){
+				q_res2530_nom->Fake(jc_f, weight);
+				q_res2530_h7smear->Fake(jc_f, weight * prior_adjust_h7);
+				q_res2530_p8smear->Fake(jc_f, weight * prior_adjust_p8);
+			}
+			else if( ji == 2 ){
+				q_res3040_nom->Fake(jc_f, weight);
+				q_res3040_h7smear->Fake(jc_f, weight * prior_adjust_h7);
+				q_res3040_p8smear->Fake(jc_f, weight * prior_adjust_p8);
+			}
+		}
+
+		else{
+	                syst_res[iSyst]->Fake(jc_f, f_pt, weight);
+		}
                 if(iSyst == 0){
                     q_pt_response->Fake(jc_f, f_pt, weight);
                     q_pt_response_counts->Fake(jc_f, f_pt);
@@ -594,6 +788,16 @@ int main(int argc, const char** argv){
     
     TFile *fout = new TFile(((string) argv[1]+(string) argv[2]).c_str(),"RECREATE");
     cout << "DEBUG: output file name is " << fout->GetName() << endl;
+
+
+    for(int i = 0; i < nSources; i++){
+        for(int j = 0; j < nJetPtBins; j++){
+            syst_dists[i][j][0]->Write();
+            syst_dists[i][j][1]->Write();
+        }
+    }
+
+
     
     m_pt_response->Write();
     //m_pt_response_counts->Write();
@@ -601,10 +805,19 @@ int main(int argc, const char** argv){
     //pt_response->Write();
     match_plus_miss->Write();
 
-    res_1D_1015->Write();
-    res_1D_1520->Write();
-    res_1D_2030->Write();
-    res_1D_3040->Write();
+
+    q_res2025_nom->Write();
+    q_res2530_nom->Write();
+    q_res3040_nom->Write();
+
+    q_res2025_h7smear->Write();
+    q_res2530_h7smear->Write();
+    q_res3040_h7smear->Write();
+
+    q_res2025_p8smear->Write();
+    q_res2530_p8smear->Write();
+    q_res3040_p8smear->Write();
+
 
     for(int i = 0; i < (int) base_res.size(); i++){
         base_res[i]->Write();
