@@ -191,7 +191,7 @@ void plot_Qjet_bylevel(double R = 0.4, double k = 0.0, bool level = 0){
 			data_2Ds[j]->SetXTitle( Form( "#LTQ_{jet}#GT  (#kappa = %1.1f)" , k) );
 
 
-			cout << "absolute error on Q=0 bin = " << data_2Ds[j]->GetBinError( data_2Ds[j]->FindBin(0.0) ) / data_2Ds[j]->GetBinContent( data_2Ds[j]->FindBin(0.0) ) << "\n";
+			cout << "% error on Q=0 bin = " << data_2Ds[j]->GetBinError( data_2Ds[j]->FindBin(0.0) ) / data_2Ds[j]->GetBinContent( data_2Ds[j]->FindBin(0.0) ) << "\n";
 
 
 			data_2Ds[j]->Draw("p same");
