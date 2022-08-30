@@ -6,6 +6,9 @@
 //  This file projects flavor + "_qvpt" histograms onto the jet Q axis, parameterize the distribution (starting with as gaussians, function subject to change) and fit a linear combination of these templates to the unfolded distributions for a given kappa
 //
 //  treat the same as macros/hists.cxx, macros/reponse.cxx, etc  with input from command line
+//
+
+
 
 
 #include <stdio.h>
@@ -82,8 +85,14 @@ int main(int argc, const char** argv){
     TH2D* jetQ[n_template_flavors];
     TH1D* jetQ_proj[n_template_flavors][njetbins];
     
+    TH1D* rel_abunds[n_template_flavors][njetbins];
+
+    
     TF1* other_fit[njetbins];
     TH1D* other_jetQ[njetbins];
+    
+    
+    TH1D* flav_sum_hist[njetbins]; // add all flavor histograms together to get the total number of jets in simulation to calculate relative abundances in fit_templates.cxx
     
     
     for(int i = 0; i < n_template_flavors; i++){
@@ -112,8 +121,19 @@ int main(int argc, const char** argv){
             
             jetQ_proj[i][j] = (TH1D*) jetQ[i]->ProjectionX( template_flavor_names[i] + "_" + outFile_pt[j], j+2, j+2 );
 
+            if(i == 0){ // for the first flavor, clone the projection histogram
+                flav_sum_hist[j] = (TH1D*) jetQ_proj[i][j]->Clone( "flav_sum_hist" + outFile_pt[j] );
+
+            }
+            else{flav_sum_hist[j]->Add(jetQ_proj[i][j], 1.0);}
+            // for every other flavor, add to the sum histogram to get the total sum such that the integral == number of jets in simulation
+
+            rel_abunds[i][j] = (TH1D*) jetQ_proj[i][j]->Clone( "rel_abunds_" + template_flavor_names[i] + "_" + outFile_pt[j] );// non-normalized to maintain the information on number of jets by flavor
+            
+            
             TString other_fit_name = "fit_other_" + outFile_pt[j];
             
+            /* // where the "other" histogram and fit function was created and fit--no longer necessary, keeping just as a legacy
             if(i == 2){ // 0=d, 1=u, 2 != g, so 2 is first to put into "other" template with the rest of the flavors, c, s, t, b combine into "other" for simplicity
                 //other_jetQ[j] = (TH1D*) jetQ_proj[i][j]->Clone( Form( "other_%1.0f%1.0f", jetPtLo[j], jetPtHi[j] )  );
                 
@@ -123,7 +143,7 @@ int main(int argc, const char** argv){
                 cout << "fit name for other: " << other_fit_name << "\n";
                 
             }
-            else if( ! ( i%7 == 0 || i%7 == 1 || i%7 == 6 ) ){
+            //else if( ! ( i%7 == 0 || i%7 == 1 || i%7 == 6 ) ){
                 other_jetQ[j]->Add( jetQ_proj[i][j] );
             }
             
@@ -132,6 +152,7 @@ int main(int argc, const char** argv){
                 other_jetQ[j]->Scale( 1.0 / ( other_jetQ[j]->Integral( 0, other_jetQ[j]->GetNbinsX() + 1 ) ) );
                 other_jetQ[j]->Fit( other_fit_name );
             }
+            */
             
             jetQ_proj[i][j]->Scale( 1.0 / ( jetQ_proj[i][j]->Integral( 0, jetQ_proj[i][j]->GetNbinsX() + 1 ) ) );
 
@@ -168,9 +189,17 @@ int main(int argc, const char** argv){
             jetQ_proj[i][j]->Write(); // projections of qvpt onto jet q by flavor of parton (TH1D*)
         }
     }
+
+    
+    
     for(int j = 0; j < njetbins; j++){
-        other_jetQ[j]->Write();
+    //    other_jetQ[j]->Write();
+        flav_sum_hist[j]->Write(); // sum of histograms for all flavors in each pt ranges
+        for(int i = 0; i < n_template_flavors; i++){
+            rel_abunds[i][j]->Write(); // non-normalized histograms with the number of jets of each flavor in each jet pt range
+        }
     }
+    
     
     return 0;
 }
