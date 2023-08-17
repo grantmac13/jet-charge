@@ -70,8 +70,9 @@ int main(int argc, const char** argv){
     const int nJetPtBins = 4;
 
     // may want to uniform-ize bins to 5 GeV consistently
-    double jetptEdges[nJetPtBins+1] = {15.0, 20.0, 25.0, 30.0, 40.0};
-
+    double jetptEdges[nJetPtBins+1] = { 15.0, 20.0, 25.0, 30.0, 40.0 };
+    
+    
     string sim_str = (string) argv[4];
 
     if(sim_str != "sim"){
@@ -94,30 +95,45 @@ int main(int argc, const char** argv){
     int njetQbins = (2*max_q)/qBinWidth + 1;
 
 
-    double jetQ_cut = 0.0; // minimum pt to include in jet charge calculation, mainly used when jets clustered with constituents of >= 200 MeV
-    if(jetQ_cut > 0.2){cout << "Calculating Q for constituents > " << jetQ_cut << " GeV\n";}
+    //double jetQ_cut = 0.0; // minimum pt to include in jet charge calculation, mainly used when jets clustered with constituents of >= 200 MeV
+    //if(jetQ_cut > 0.2){cout << "Calculating Q for constituents > " << jetQ_cut << " GeV\n";}
 
 
     if(k == 0.0){jetQedge = 6.5; njetQbins = 13;} // no real choice in binning for k = 0.0 since k = 0.0 corresponds to adding integers together
     //else if(k < 0.0){jetQedge = 10.0 + (1.0/2.0)*qBinWidth; njetQbins = 101;} // bin width = 20/100 = 0.2, can even get finer bins; not even as fine as CMS' yet (jet to study effect of bin width in fitting)
 
     //int njetQbins = (2 * jetQedge)/qBinWidth; //
+    
+    
+    
+    
+    TH2D* partQvPt = new TH2D("partQvPt", ";Q^{jet};p_{T} (GeV/c)", njetQbins, -jetQedge, jetQedge, 15, 5, 80);
+    TH2D* detQvPt = new TH2D("detQvPt", ";Q^{jet};p_{T} (GeV/c)", njetQbins, -jetQedge, jetQedge, nJetPtBins, jetptEdges);
+    
+    
+//    TH2D* partQvPt = new TH2D("partQvPt", ";Q^{jet};p_{T} (GeV/c)", njetQbins, -jetQedge, jetQedge, 15, 5, 80);
+//    TH2D* detQvPt = new TH2D("detQvPt", ";Q^{jet};p_{T} (GeV/c)", njetQbins, -jetQedge, jetQedge, 9, 15, 60);
+    
+    
+    
 
-
-    
-    TH2D* partQvPt = new TH2D("partQvPt", ";Q^{jet};p_{T} (GeV/c)", njetQbins, -jetQedge, jetQedge, 15, 5, 80); // want particle level to be binned the same as detector level to compare Q in same jet pt range
-    TH2D* detQvPt = new TH2D("detQvPt", ";Q^{jet};p_{T} (GeV/c)", njetQbins, -jetQedge, jetQedge, 9, 15, 60);
-    
-    
-    //TH2D* partQvPt = new TH2D("partQvPt", ";Q^{jet};p_{T} (GeV/c)", njetQbins, -jetQedge, jetQedge, nJetPtBins, jetptEdges); // want particle level to be binned the same as detector level to compare Q in same jet pt range
-    //TH2D* detQvPt = new TH2D("detQvPt", ";Q^{jet};p_{T} (GeV/c)", njetQbins, -jetQedge, jetQedge, nJetPtBins, jetptEdges);
-    
-    
-
-    TH1D* det_pt = new TH1D("det_pt", "", 9, 15, 60);
     TH1D* part_pt = new TH1D("part_pt", "", 15, 5, 80);
+    TH1D* det_pt = new TH1D("det_pt", "", 9, 15, 60);
+    
+    // 8/8/23: DEBUGGING HISTOGRAMS--pt spectra, constituent pt spectra, nef (if necessary)
+    TH1D* p_jetpt = new TH1D("p_jetpt", "", 15, 5, 80);
+    TH1D* d_jetpt = new TH1D("d_jetpt", "", 9, 15, 60);
 
+    
+    int max_conspt = 40;
 
+    TH2D* p_conspt_jetpt = new TH2D("p_conspt_jetpt", "", 5*max_conspt, 0, max_conspt, 15, 5, 80);
+    TH2D* d_conspt_jetpt = new TH2D("d_conspt_jetpt", "", 5*max_conspt, 0, max_conspt, 9, 15, 60);
+    
+    
+    
+    
+    
     TH1D* partQ = new TH1D("partQ", "", njetQbins, -jetQedge, jetQedge);
     TH1D* detQ = new TH1D("detQ", "", njetQbins, -jetQedge, jetQedge);
 
@@ -134,7 +150,8 @@ int main(int argc, const char** argv){
     TH2D* deltaQvGePt = new TH2D("deltaQvGePt", ";Det. p^{jet}_{T};#DeltaQ_{#kappa} (Det - Gen) / Gen. Q_{#kappa}", 11, 5, 60, 100, -6, 6);
     // axis titles following Isaac's convention in jetmass2/macros/hists.cxx
 
-
+    
+    
 
     // TEMPORARY: HARDCODING RADIUS HERE
 
@@ -362,19 +379,34 @@ int main(int argc, const char** argv){
                 double p_pt = part_jetpt->at(j);
                 double d_pt =  det_jetpt->at(j);
 
+                
+                if( iSyst == 0 ){
+                    p_jetpt->Fill( p_pt, weight );
+                    d_jetpt->Fill( d_pt, weight );
+                }
 
 
                 for(int ii = 0; ii < (int) max( part_conspt->at(j).size(), det_conspt->at(j).size() ); ii++){
                     if(ii < (int) part_conspt->at(j).size()){
                         double p_cons_pt = part_conspt->at(j).at(ii);
 
-                        if( jetQ_cut > 0.2 && p_cons_pt < jetQ_cut ){continue;}
+                        if( iSyst == 0 ){
+                            p_conspt_jetpt->Fill( p_cons_pt, p_pt, weight );
+                        }
+                        
+                        //if( jetQ_cut > 0.2 && p_cons_pt < jetQ_cut ){continue;}
+                        // using continue here should also skip the if(ii < det_conspt->at(j).size()) statement?
+                        // the continue skips the value of ii and increments to try again
                         jc_p += pow( (p_cons_pt/p_pt) , k ) * part_chcons->at(j).at(ii);
                     }
                     if(ii < (int) det_conspt->at(j).size()){
                         double d_cons_pt = det_conspt->at(j).at(ii);
 
-                        if( jetQ_cut > 0.2 && d_cons_pt < jetQ_cut ){continue;}
+                        if( iSyst == 0 ){
+                            d_conspt_jetpt->Fill( d_cons_pt, d_pt, weight );
+                        }
+
+                        //if( jetQ_cut > 0.2 && d_cons_pt < jetQ_cut ){continue;}
                         jc_d += pow( (d_cons_pt/d_pt) , k ) * det_chcons->at(j).at(ii);
                     }
                 }
@@ -519,7 +551,7 @@ int main(int argc, const char** argv){
                 for(int ii = 0; ii < (int) miss_conspt->at(jj).size(); ii++){
                     double m_cons_pt = miss_conspt->at(jj).at(ii);
 
-                    if( jetQ_cut > 0.2 && m_cons_pt < jetQ_cut ){continue;}
+                    //if( jetQ_cut > 0.2 && m_cons_pt < jetQ_cut ){continue;}
                     jc_m += pow( (m_cons_pt/m_pt), k ) * miss_chcons->at(jj).at(ii);
                 }
 
@@ -597,7 +629,7 @@ int main(int argc, const char** argv){
                 for(int ii = 0; ii < (int) fake_conspt->at(jj).size(); ii++){
                     double f_cons_pt = fake_conspt->at(jj).at(ii);
 
-                    if( jetQ_cut > 0.2 && f_cons_pt < jetQ_cut ){continue;}
+                    //if( jetQ_cut > 0.2 && f_cons_pt < jetQ_cut ){continue;}
                     jc_f += pow( (f_cons_pt/f_pt), k ) * fake_chcons->at(jj).at(ii);
                 }
 
@@ -722,6 +754,13 @@ int main(int argc, const char** argv){
     deltaPtvGePt->Write();
 
 
+    p_jetpt->Write();
+    d_jetpt->Write();
+    
+    p_conspt_jetpt->Write();
+    d_conspt_jetpt->Write();
+    
+    
     cout << "Wrote to " << fout->GetName() << endl;
 
     //closing file

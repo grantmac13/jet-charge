@@ -39,7 +39,7 @@ std::vector<TH1D*> Projection2D (TH2D * hist2D, const int nBins, double * ranges
 		cerr << "high edge: " << high_rough << "\n";
 		if (axis == "x" || axis == "X" || axis == "1") {
 			cout << "now including e option" << endl;
-			proj1Ds.push_back(hist2D->ProjectionX((hist2D->GetName() + axis + low_rough + high_rough).c_str(), hist2D->GetYaxis()->FindBin(ranges[i]), hist2D->GetYaxis()->FindBin(ranges[i+1]) - 1, "e"));
+			proj1Ds.push_back(hist2D->ProjectionX((hist2D->GetName() + axis + low_rough + high_rough).c_str(), hist2D->GetYaxis()->FindBin( ranges[i] ), hist2D->GetYaxis()->FindBin( ranges[i+1] ) - 1, "e"));
 			// testing above:
 //			proj1Ds.push_back(hist2D->ProjectionX((hist2D->GetName() + axis + low_rough + high_rough).c_str(), ranges[i], ranges[i+1] - 1, "e"));
 		}
@@ -170,7 +170,8 @@ int main(int argc, const char** argv){
 
 
 	//(b) create an object which dictates how the unfolding will happen (e.g. what data spectrum will be unfolded, how many iterations of unfolding, etc.)
-	RooUnfoldBayes *unfold_nom = new RooUnfoldBayes(rnom, dat_spectrum, 4, false, "unfold_nom", "");
+    RooUnfoldBayes *unfold_test = new RooUnfoldBayes(res, dat_spectrum, 4, false, "unfold_test", "");
+    RooUnfoldBayes *unfold_nom = new RooUnfoldBayes(rnom, dat_spectrum, 4, false, "unfold_nom", "");
 	RooUnfoldBayes *unfold_IP2 = new RooUnfoldBayes(rnom, dat_spectrum, 2, false, "unfold_IP2", "");
 	RooUnfoldBayes *unfold_IP6 = new RooUnfoldBayes(rnom, dat_spectrum, 6, false, "unfold_IP6", "");
 	RooUnfoldBayes *unfold_TS = new RooUnfoldBayes(rTS, dat_spectrum, 4, false, "unfold_TS", "");
@@ -221,8 +222,13 @@ int main(int argc, const char** argv){
 //	unfold_nom->IncludeSystematics(1); // Isaac didn't do it for pp but important when statistics are low
 //	unfold_nom->SetNToys(1000); // slows it down a lot, Isaac also did not do for pp
 	// come back to this...
-
+    
+    cout << "\nNOMINAL UNFOLDING: systematics included? " << unfold_nom->SystematicsIncluded() << "\n";
+    
+    
 	//(d) do the unfolding
+    TH2D* reco_test = (TH2D*) unfold_test->Hreco((RooUnfold::ErrorTreatment) 3);
+    
 	TH2D* reco_nom = (TH2D*) unfold_nom->Hreco((RooUnfold::ErrorTreatment) 3); // 3 is nominal for our group, see link in email for reference of other options
 	TH2D* reco_IP2 = (TH2D*) unfold_IP2->Hreco((RooUnfold::ErrorTreatment) 3); // 3 is nominal for our group, see link in email for reference of other options
 	TH2D* reco_IP6 = (TH2D*) unfold_IP6->Hreco((RooUnfold::ErrorTreatment) 3); // 3 is nominal for our group, see link in email for reference of other options
@@ -241,16 +247,16 @@ int main(int argc, const char** argv){
 
 
 
-    cout << "DEBUG: Where is the break? 1\n";
+//    cout << "DEBUG: Where is the break? 1\n";
 
 	TH1D* reco_nom1D_2025 = (TH1D*) unfold_nom1D_2025->Hreco((RooUnfold::ErrorTreatment) 3);
     // this line is the issue???
 
 
-    cout << "DEBUG: Where is the break? 2a\n";
+//    cout << "DEBUG: Where is the break? 2a\n";
 
     TH1D* reco_h7smear1D_2025 = (TH1D*) unfold_h7smear1D_2025->Hreco((RooUnfold::ErrorTreatment) 3);
-    cout << "DEBUG: Where is the break? 2b\n";
+//    cout << "DEBUG: Where is the break? 2b\n";
     TH1D* reco_p8smear1D_2025 = (TH1D*) unfold_p8smear1D_2025->Hreco((RooUnfold::ErrorTreatment) 3);
     TH1D* reco_nom1D_2530 = (TH1D*) unfold_nom1D_2530->Hreco((RooUnfold::ErrorTreatment) 3);
     TH1D* reco_h7smear1D_2530 = (TH1D*) unfold_h7smear1D_2530->Hreco((RooUnfold::ErrorTreatment) 3);
@@ -270,6 +276,8 @@ int main(int argc, const char** argv){
 
 
 	//(e) project onto 1D histograms
+    vector<TH1D*> reco_tests = Projection2D(reco_test, nBins, jetEdges, "x");
+    
 	vector<TH1D*> reco_noms = Projection2D(reco_nom, nBins, jetEdges, "x"); // i think--- Isaac's custom function will return a vector of histograms
 	vector<TH1D*> reco_IP2s = Projection2D(reco_IP2, nBins, jetEdges, "x"); // i think--- Isaac's custom function will return a vector of histograms
 	vector<TH1D*> reco_IP6s = Projection2D(reco_IP6, nBins, jetEdges, "x"); // i think--- Isaac's custom function will return a vector of histograms
@@ -280,7 +288,7 @@ int main(int argc, const char** argv){
 	vector<TH1D*> reco_GSs = Projection2D(reco_GS, nBins, jetEdges, "x"); // i think--- Isaac's custom function will return a vector of histograms
 	// project the 2D onto 1Ds for the pT ranges I select. see functions "Projection2D" from unfold.cxx on Isaac's github
 
-    cout << "DEBUG: Where is the break? 3\n";
+//    cout << "DEBUG: Where is the break? 3\n";
 
 
     vector<TH1D*> recos_same[N_iters]; vector<TH1D*> recos_opp[N_iters];
@@ -290,7 +298,7 @@ int main(int argc, const char** argv){
     }
 
 
-    cout << "DEBUG: Where is the break? 4\n";
+//    cout << "DEBUG: Where is the break? 4\n";
 
 
 	//vector<TH1D*> reco_slices_1D = Projection2D(reco_1D, nBins, jetEdges, "x"); // i think--- Isaac's custom function will return a vector of histograms
@@ -299,6 +307,8 @@ int main(int argc, const char** argv){
     vector<TH1D*> reco_noms_scale;
 
 	// jet charge distributions for the systematics, don't turn these into % errors
+    vector<TH1D*> reco_tests_copy;
+    
 	vector<TH1D*> reco_noms_copy;
 	vector<TH1D*> reco_IP2s_copy;
 	vector<TH1D*> reco_IP6s_copy;
@@ -312,11 +322,13 @@ int main(int argc, const char** argv){
     vector<TH1D*> reco_H7s_copy;
 
 
-    cout << "DEBUG: Where is the break? 5\n";
+//    cout << "DEBUG: Where is the break? 5\n";
 
     for(int i = 0; i < nBins; i++){
         reco_noms_scale.push_back( (TH1D*) reco_noms[i]->Clone( Form("unf_scale_%1.0f%1.0f", jetEdges[i], jetEdges[i+1] ) ) );
 
+        reco_tests[i]->Scale( 1.0 / ( reco_tests[i]->Integral(0, reco_tests[i]->GetNbinsX() + 1) ) );
+        
 		reco_noms[i]->Scale( 1.0 / ( reco_noms[i]->Integral(0, reco_noms[i]->GetNbinsX() + 1) ) );
 		reco_IP2s[i]->Scale( 1.0 / ( reco_IP2s[i]->Integral(0, reco_IP2s[i]->GetNbinsX() + 1) ) );
 		reco_IP6s[i]->Scale( 1.0 / ( reco_IP6s[i]->Integral(0, reco_IP6s[i]->GetNbinsX() + 1) ) );
@@ -453,7 +465,7 @@ int main(int argc, const char** argv){
 
 
 
-cout << "setting histogram content to % difference compared to nominal\n";
+//cout << "setting histogram content to % difference compared to nominal\n";
 
 	for(int j = 1; j <= (int) reco_h7smear1D_2025->GetNbinsX(); j++){
 		reco_h7smear1D_2025->SetBinContent( j, fabs( reco_h7smear1D_2025->GetBinContent(j) - 1 ) );
@@ -490,10 +502,10 @@ cout << "setting histogram content to % difference compared to nominal\n";
 
         for(int jj = 0; jj < N_iters; jj++){
             recos_same[jj][i]->PutStats(stats);
-            recos_same[jj][i]->Sumw2(0);
+//            recos_same[jj][i]->Sumw2(0);
 
             recos_opp[jj][i]->PutStats(stats);
-            recos_opp[jj][i]->Sumw2(0);
+//            recos_opp[jj][i]->Sumw2(0);
         }
 
 
@@ -553,12 +565,13 @@ cout << "setting histogram content to % difference compared to nominal\n";
             nets[i]->SetBinContent(j,sqrt(square));
             syst_errs1D.push_back(nets[i]->GetBinContent(j));
 
+            /*
             if( reco_noms[i]->GetBinContent(j) < 0.00001 ){
                 stat_s[i]->SetBinContent( j, 0 );
             }
-            else{
+            else{*/
                 stat_s[i]->SetBinContent( j, reco_noms[i]->GetBinError(j) / reco_noms[i]->GetBinContent(j) );
-            }
+//            }
         }
 
         syst_errs2D.push_back(syst_errs1D);
@@ -579,7 +592,7 @@ cout << "setting histogram content to % difference compared to nominal\n";
 	TFile *fout = new TFile( ("./out/unfold/unfolded_R"+ radius + "_k" + kappa + ".root").c_str() , "RECREATE");
 	fout->cd();
 
-	cout << "output file name: " << ("./out/unfold/unfolded_R"+ radius + "_k" + kappa + ".root").c_str() << "\n";
+	//cout << "output file name: " << ("./out/unfold/unfolded_R"+ radius + "_k" + kappa + ".root").c_str() << "\n";
 
     cout << "output file name: " << fout->GetName() << "\n";
 
@@ -587,6 +600,8 @@ cout << "setting histogram content to % difference compared to nominal\n";
 	for(int i = 0; i < nBins; i++){
         reco_noms_scale[i]->Write();
 
+        reco_tests[i]->Write();
+        
 		reco_noms[i]->Write();
 		reco_IP2s[i]->Write();
 		reco_IP6s[i]->Write();
@@ -636,25 +651,25 @@ cout << "setting histogram content to % difference compared to nominal\n";
 	dat_spectrum->Write();
 	reco_nom->Write();
 
-    cout << "write out objects\n";
+    //cout << "write out objects\n";
 
 	//dat_1D_1520->Write();
 	dat_1D_2025->Write();
 	dat_1D_2530->Write();
 	dat_1D_3040->Write();
 
-    cout << "what did i add that breaks things??\n";
+    //cout << "what did i add that breaks things??\n";
 
 
     //qres2D_part->Write();
     //qres2D_det->Write();
 
-    cout << "is it the 2D distributions??\n";
+    //cout << "is it the 2D distributions??\n";
 
     //ptres2D_part->Write();
     //ptres2D_det->Write();
 
-    cout << "done.....\n";
+    cout << "Done.\n";
 
     for(int i = 0; i < nBins; i++){
         for(int jj = 0; jj < N_iters; jj++){

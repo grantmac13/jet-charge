@@ -77,7 +77,7 @@ int main(int argc, const char ** argv){
     vector<double> jetPtLo = {15.0, 20.0, 25.0, 30.0};
     vector<double> jetPtHi = {20.0, 25.0, 30.0, 40.0};
 
-    double jetptEdges[nJetPtBins+1] = {15.0, 20.0, 25.0, 30.0, 40.0};
+    double jetptEdges[nJetPtBins+1] = { 15.0, 20.0, 25.0, 30.0, 40.0 };
 
     int jetptHiEdge = 50;
     // to use narrower bins in jet pt on det-level, data
@@ -118,27 +118,26 @@ int main(int argc, const char ** argv){
     /// START MAKING HISTOGRAMS
 
     // pT spectra for data or det- and part-level pythia
-    TH1D* njets_pt = new TH1D("jet_pt_hist", "", 60, 0.0, 60.0);
-    TH1D* njets_pt_pl = new TH1D("jet_pt_hist_part", "", 60, 0.0, 60.0);
+    TH1D* njets_pt = new TH1D("jet_pt_hist", "", 60, 0, 60);
+    TH1D* njets_pt_pl = new TH1D("jet_pt_hist_part", "", 60, 0, 6);
 
-    // number of charged constituents, 2D with jet pt
-    TH2D* nch_cons =  new TH2D("nch_cons_d", "", nchbins, 0, nchbins - 0.5, 60, 0.0, 60.0);
-    TH2D* nch_cons_pl =  new TH2D("nch_cons_p", "", nchbins, -0.5, nchbins - 0.5, 60, 0.0, 60.0);
+    
+    
+    // 8/7/2023 for Debugging:
+    // plot jet pt, constituent pt, jet nef spectra for both part- and det-level
+    // as functions of jet pt for the non-jet pt hists
+    TH1D* det_jetpt_db = new TH1D( "det_jetpt_db", "", 15, 5, 80);
+    TH1D* part_jetpt_db = new TH1D( "part_jetpt_db", "", 15, 5, 80);
+    
+    
+    TH2D* det_nef_vs_jetpt = new TH2D( "det_nef_vs_jetpt", "", 40, 0, 1, 9, 15, 60 );
+    TH2D* part_nef_vs_jetpt = new TH2D( "part_nef_vs_jetpt", "", 40, 0, 1, 15, 5, 80 );
 
-
-    // 6/29/23: compare pythia+geant and data dists: pt spectra of charged jet constituents, number of charged jet constituents (multiplicities)
-    TH2D* conspt_jetpt = new TH2D("conspt_jetpt", "", 20, 0, 20, 15, 5, 80);
-    // 7/20/23: want to see pt spectra by charge as well
-    TH2D* conspt_pos_jetpt = new TH2D("conspt_pos_jetpt", "", 20, 0, 20, 15, 5, 80);
-    TH2D* conspt_neg_jetpt = new TH2D("conspt_neg_jetpt", "", 20, 0, 20, 15, 5, 80);
-
-    TH2D* ncons_jetpt = new TH2D("ncons_jetpt", "", 20, -0.5, 19.5, 15, 5, 80);
-    TH2D* ncons_pos_jetpt = new TH2D("ncons_pos_jetpt", "", 20, -0.5, 19.5, 15, 5, 80);
-    TH2D* ncons_neg_jetpt = new TH2D("ncons_neg_jetpt", "", 20, -0.5, 19.5, 15, 5, 80);
-
-
-    // 7/20/23: add NEF just to close loop
-    TH2D* hNEF = new TH2D( "hNEF", "", 20, 0.0, 1.0, 15, 5, 80 );
+    
+    int max_conspt = 40;
+    TH2D* det_cons_vs_jetpt = new TH2D( "det_cons_vs_jetpt", "", 5*max_conspt, 0, max_conspt, 9, 15, 60 );
+    TH2D* part_cons_vs_jetpt = new TH2D( "part_cons_vs_jetpt", "", 5*max_conspt, 0, max_conspt, 15, 5, 80 );
+    
 
 
     // moved to response
@@ -154,14 +153,16 @@ int main(int argc, const char ** argv){
     // axis titles following Isaac's convention in jetmass2/macros/hists.cxx
 
 
+    
 
 
-//    TH2D* QvPt = new TH2D("QvPt_d", "", njetQbins, -jetQedge, jetQedge, nJetPtBins, jetptEdges); // data/detector level
-//    TH2D* QvPt_p = new TH2D("QvPt_p", "", njetQbins, -jetQedge, jetQedge, 15, 5, 80); // particle level (should not be filled for data)
-
-
-    TH2D* QvPt = new TH2D("QvPt_d", "", njetQbins, -jetQedge, jetQedge, 9, 5, 60); // data/detector level
+    TH2D* QvPt = new TH2D("QvPt_d", "", njetQbins, -jetQedge, jetQedge, nJetPtBins, jetptEdges); // data/detector level
     TH2D* QvPt_p = new TH2D("QvPt_p", "", njetQbins, -jetQedge, jetQedge, 15, 5, 80); // particle level (should not be filled for data)
+
+
+    // temporarily commented. these are the correct binnings
+//    TH2D* QvPt = new TH2D("QvPt_d", "", njetQbins, -jetQedge, jetQedge, 9, 15, 60); // data/detector level
+//    TH2D* QvPt_p = new TH2D("QvPt_p", "", njetQbins, -jetQedge, jetQedge, 15, 5, 80); // particle level (should not be filled for data)
 
 
     //cout << "after making the 2D histogram... bins along charge axis = " << QvPt->GetNbinsX() << "\n";
@@ -217,7 +218,6 @@ int main(int argc, const char ** argv){
 
                 double jc = 0.0;
                 double jpt = jetpt->at(ij);
-                int nch = 0; int npos = 0; int nneg = 0;
 
                 double nef_d = 0.0; // initialize nef counter
 
@@ -227,27 +227,15 @@ int main(int argc, const char ** argv){
                     double pt_i = conspt->at(ij).at(j);
                     double charge = chcons->at(ij).at(j);
 
-                    if( jetQ_cut > 0.2 && pt_i < jetQ_cut ){continue;}
+//                    if( jetQ_cut > 0.2 && pt_i < jetQ_cut ){continue;}
                     jc += pow( (pt_i/jpt), kappa ) * charge;
 
+                    det_cons_vs_jetpt->Fill( pt_i, jpt );
 
-                    // fill charged dists
-                    if(charge != 0){
-                        nch++;
-                        conspt_jetpt->Fill( pt_i, jpt );
-
-
-                        if(charge < 0){nneg++; conspt_neg_jetpt->Fill( pt_i, jpt );}
-                        if(charge > 0){npos++; conspt_pos_jetpt->Fill( pt_i, jpt );}
-                    }
                     if(charge == 0){nef_d += pt_i/jpt;}
                 }
 
-                hNEF->Fill( nef_d, jpt );
-
-                ncons_jetpt->Fill( nch, jpt );
-                ncons_pos_jetpt->Fill( npos, jpt );
-                ncons_neg_jetpt->Fill( nneg, jpt );
+                det_nef_vs_jetpt->Fill( nef_d, jpt );
 
 
 
@@ -256,8 +244,6 @@ int main(int argc, const char ** argv){
 
                 q_v_pt_counts[0]->Fill( jc, jpt );
 
-                // number of charged constituents in jet
-                nch_cons->Fill( nch, jpt );
 
 
                 for(int kj = 0; kj < nJetPtBins; kj++){ // loop through jet pt bins
@@ -296,51 +282,46 @@ int main(int argc, const char ** argv){
                 double jc_d = 0.0;
                 double jpt_d = det_jetpt->at(ij);
 
-                int nch_p = 0;
-                int nch_d = 0; int npos_d = 0; int nneg_d = 0;
 
-                double nef_d = 0.0; // initialize nef counter
+                double nef_d = 0.0; double nef_p = 0.0; // initialize nef counter
 
                 njets_pt_pl->Fill(jpt_p, weight);
                 njets_pt->Fill(jpt_d, weight);
 
+                det_jetpt_db->Fill( jpt_d, weight );
+                part_jetpt_db->Fill( jpt_p, weight );
+                
 
                 for(int j = 0; j < (int) part_conspt->at(ij).size(); j++){
                     double pt_i = part_conspt->at(ij).at(j);
                     double charge = part_chcons->at(ij).at(j);
 
 //		            if( pt_i < jetQ_cut ){continue;}
-                    if( jetQ_cut > 0.2 && pt_i < jetQ_cut ){continue;}
+//                    if( jetQ_cut > 0.2 && pt_i < jetQ_cut ){continue;}
 
                     jc_p += pow( (pt_i/jpt_p), kappa ) * charge;
 
+                    det_cons_vs_jetpt->Fill( pt_i, jpt_p, weight );
+
+                    if(charge == 0){nef_p += pt_i/jpt_p;}
                 } // part-level jet constituents
                 for(int j = 0; j < (int) det_conspt->at(ij).size(); j++){
                     double pt_i = det_conspt->at(ij).at(j);
                     double charge = det_chcons->at(ij).at(j);
 
 //		            if( pt_i < jetQ_cut ){continue;}
-                    if( jetQ_cut > 0.2 && pt_i < jetQ_cut ){continue;}
+//                    if( jetQ_cut > 0.2 && pt_i < jetQ_cut ){continue;}
 
                     jc_d += pow( (pt_i/jpt_d), kappa ) * charge;
 
-                    // fill charged dists
-                    if(charge != 0){
-                        nch_d++;
-                        conspt_jetpt->Fill( pt_i, jpt_d , weight );
+                    det_cons_vs_jetpt->Fill( pt_i, jpt_d, weight );
 
-                        if(charge < 0){nneg_d++; conspt_neg_jetpt->Fill( pt_i, jpt_d , weight );}
-                        if(charge > 0){npos_d++; conspt_pos_jetpt->Fill( pt_i, jpt_d , weight );}
-                    }
                     if(charge == 0){nef_d += pt_i/jpt_d;}
                 } // part-level jet constituents
 
-                hNEF->Fill( nef_d, jpt_d, weight );
-
-
-                ncons_jetpt->Fill( nch_d, jpt_d, weight );
-                ncons_pos_jetpt->Fill( npos_d, jpt_d, weight );
-                ncons_neg_jetpt->Fill( nneg_d, jpt_d, weight );
+                det_nef_vs_jetpt->Fill( nef_d, jpt_d, weight );
+                part_nef_vs_jetpt->Fill( nef_p, jpt_p, weight );
+                
 
                 // q vs pt with weights
                 QvPt_p->Fill(jc_p, jpt_p, weight);
@@ -350,9 +331,6 @@ int main(int argc, const char ** argv){
                 q_v_pt_counts[0]->Fill(jc_d, jpt_d);
                 q_v_pt_counts[1]->Fill(jc_p, jpt_p);
 
-                // number of charged constituents in jet
-                nch_cons_pl->Fill( nch_d, jpt_d, weight );
-                nch_cons->Fill( nch_p, jpt_p, weight );
 
                 // 1D jet Q hist: find bin corresponding to jet's pt, fill histogram with jet charge
                 for(int kj = 0; kj < nJetPtBins; kj++){ // loop through jet pt bins
@@ -413,30 +391,35 @@ int main(int argc, const char ** argv){
             for(int ij = 0; ij < max( (int) part_jetpt->size() , (int) det_jetpt->size() ); ij++){
                 double jc_p = 0.0; double jc_d = 0.0;
 
-                int nch_p = 0; int nch_d = 0; int npos_d = 0; int nneg_d = 0;
 
                 if( ij < (int) part_jetpt->size() ){
+                    double nef_p = 0.0; // initialize nef counter
+                    
                     double jpt_p = part_jetpt->at(ij);
                     njets_pt_pl->Fill(jpt_p, weight);
+                    part_jetpt_db->Fill( jpt_p, weight );
 
                     for(int j = 0; j < (int) part_conspt->at(ij).size(); j++){
                         double pt_i_p = part_conspt->at(ij).at(j);
                         double charge_p = part_chcons->at(ij).at(j);
 
 //			if( pt_i_p < jetQ_cut ){continue;}
-                        if( jetQ_cut > 0.2 && pt_i_p < jetQ_cut ){continue;}
+//                        if( jetQ_cut > 0.2 && pt_i_p < jetQ_cut ){continue;}
 
                         jc_p += pow( (pt_i_p/jpt_p), kappa ) * charge_p;
+                        
+                        
+                        part_cons_vs_jetpt->Fill( pt_i_p, jpt_p, weight );
 
+                        if(charge_p == 0){nef_p += pt_i_p/jpt_p;}
 
                     } // part-level jet constituents
+                    
+                    part_nef_vs_jetpt->Fill( nef_p, jpt_p, weight );
+                    
                     QvPt_p->Fill(jc_p, jpt_p, weight);
                     q_v_pt_counts[1]->Fill(jc_p, jpt_p);
 
-                    //cout << "part-level counts get written?\n";
-
-                    // number of charged constituents in jet
-                    nch_cons_pl->Fill( nch_p, jpt_p, weight );
 
 
                     for(int kj = 0; kj < nJetPtBins; kj++){ // loop through jet pt bins
@@ -456,43 +439,28 @@ int main(int argc, const char ** argv){
                     double nef_d = 0.0; // initialize nef counter
 
                     njets_pt->Fill( jpt_d, weight );
+                    det_jetpt_db->Fill( jpt_d, weight );
 
                     for(int j = 0; j < (int) det_conspt->at(ij).size(); j++){
                         double pt_i_d = det_conspt->at(ij).at(j);
                         double charge_d = det_chcons->at(ij).at(j);
 
 //			if( pt_i_d < jetQ_cut ){continue;}
-                        if( jetQ_cut > 0.2 && pt_i_d < jetQ_cut ){continue;}
+//                        if( jetQ_cut > 0.2 && pt_i_d < jetQ_cut ){continue;}
 
                         jc_d += pow( (pt_i_d/jpt_d), kappa ) * charge_d;
+                        
+                        det_cons_vs_jetpt->Fill( pt_i_d, jpt_d, weight );
 
-                        // fill charged dists
-                        if(charge_d != 0){
-                            nch_d++;
-                            conspt_jetpt->Fill( pt_i_d, jpt_d, weight );
-
-                            if(charge_d < 0){nneg_d++; conspt_neg_jetpt->Fill( pt_i_d, jpt_d, weight );}
-                            if(charge_d > 0){npos_d++; conspt_pos_jetpt->Fill( pt_i_d, jpt_d, weight );}
-
-                        }
                         if(charge_d == 0){nef_d += pt_i_d/jpt_d;}
 
                     } // det-level jet constituents
 
-                    hNEF->Fill( nef_d, jpt_d, weight );
+                    det_nef_vs_jetpt->Fill( nef_d, jpt_d, weight );
 
-
-                    ncons_jetpt->Fill( nch_d, jpt_d, weight );
-                    ncons_pos_jetpt->Fill( npos_d, jpt_d, weight );
-                    ncons_neg_jetpt->Fill( nneg_d, jpt_d, weight );
 
                     QvPt->Fill(jc_d, jpt_d, weight);
                     q_v_pt_counts[0]->Fill(jc_d, jpt_d);
-
-                    //cout << "det-level counts get filled?\n";
-
-                    // number of charged constituents in jet
-                    nch_cons->Fill( nch_d, jpt_d );
 
 
                     // 1D jet Q hist: find bin corresponding to jet's pt, fill histogram with jet charge
@@ -548,21 +516,17 @@ int main(int argc, const char ** argv){
     }
 
 
-    nch_cons->Write();
-    if(!data_bool){
-        nch_cons_pl->Write();
-    }
+    
+    det_jetpt_db->Write();
+    part_jetpt_db->Write();
+    
+    det_nef_vs_jetpt->Write();
+    part_nef_vs_jetpt->Write();
 
-    conspt_jetpt->Write();
-    conspt_pos_jetpt->Write();
-    conspt_neg_jetpt->Write();
-
-    ncons_jetpt->Write();
-    ncons_neg_jetpt->Write();
-    ncons_pos_jetpt->Write();
-
-    hNEF->Write();
-
+    det_cons_vs_jetpt->Write();
+    part_cons_vs_jetpt->Write();
+    
+    
     if(match){ // for matched pythia, write resolution, delta pt, etc
         deltaQvPyPt->Write();
         deltaQvGePt->Write();
