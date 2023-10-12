@@ -119,7 +119,7 @@ int main(int argc, const char ** argv){
 
     // pT spectra for data or det- and part-level pythia
     TH1D* njets_pt = new TH1D("jet_pt_hist", "", 60, 0, 60);
-    TH1D* njets_pt_pl = new TH1D("jet_pt_hist_part", "", 60, 0, 6);
+    TH1D* njets_pt_pl = new TH1D("jet_pt_hist_part", "", 60, 0, 60);
 
     
     
